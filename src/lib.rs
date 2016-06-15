@@ -19,7 +19,7 @@ fn encode(current: f64, previous: f64, factor: i32) -> String {
     output
 }
 
-pub fn encodeCoordinates(coordinates: Vec<[f64; 2]>, precision: u32) -> String {
+pub fn encode_coordinates(coordinates: Vec<[f64; 2]>, precision: u32) -> String {
     if coordinates.len() == 0 {
         return "".to_string();
     }
@@ -38,14 +38,81 @@ pub fn encodeCoordinates(coordinates: Vec<[f64; 2]>, precision: u32) -> String {
     output
 }
 
+pub fn decode_polyline(str: String, precision: u32) -> Vec<[f64; 2]> {
+    let mut index = 0;
+    let mut lat: f64 = 0.0;
+    let mut lng: f64 = 0.0;
+    let mut coordinates = vec![];
+    let mut shift: u64 = 0;
+    let mut result = 0;
+    // let mut byte = null;
+    let base: i32 = 10;
+    let factor: i32 = base.pow(precision);
+
+    // Coordinates have variable length when encoded, so just keep
+    // track of whether we've hit the end of the string. In each
+    // loop iteration, a single coordinate is decoded.
+    while index < str.len() {
+
+        // Reset shift, result, and byte
+        // byte = null;
+        shift = 0;
+        result = 0;
+
+        let mut byte = 0;
+
+        while {
+            byte = (str.chars().nth(index).unwrap() as u64) - 63;
+            index = index + 1;
+            result |= (byte & 0x1f) << shift;
+            shift += 5;
+            byte >= 0x20
+        } { }
+
+        let latitude_change: f64 = if (result & 1) > 0 {
+            !(result >> 1)
+        } else {
+            result >> 1
+        } as f64;
+
+        shift = 0;
+        result = 0;
+
+        while {
+            byte = (str.chars().nth(index).unwrap() as u64) - 63;
+            index = index + 1;
+            result |= (byte & 0x1f) << shift;
+            shift += 5;
+            byte >= 0x20
+        } { }
+
+        let longitude_change: f64 = if (result & 1) > 0 {
+            !(result >> 1)
+        } else {
+            result >> 1
+        } as f64;
+
+        lat += latitude_change;
+        lng += longitude_change;
+
+        coordinates.push([lat / factor as f64, lng / factor as f64]);
+    }
+
+    coordinates
+}
+
 #[cfg(test)]
 mod tests {
 
-    use super::encodeCoordinates;
+    use super::encode_coordinates;
+    use super::decode_polyline;
 
     #[test]
     fn it_works() {
+        let encoded = "_ibE_seK_seK_seK";
         let coords = vec![[1.0, 2.0], [3.0, 4.0]];
-        assert_eq!(encodeCoordinates(coords, 5), "_ibE_seK_seK_seK")
+        let coords2 = vec![[1.0, 2.0], [3.0, 4.0]];
+        assert_eq!(encode_coordinates(coords, 5), encoded);
+        assert_eq!(decode_polyline(encoded.to_string(), 5), coords2);
     }
 }
