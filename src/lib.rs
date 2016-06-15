@@ -43,9 +43,6 @@ pub fn decode_polyline(str: String, precision: u32) -> Vec<[f64; 2]> {
     let mut lat: f64 = 0.0;
     let mut lng: f64 = 0.0;
     let mut coordinates = vec![];
-    let mut shift: u64 = 0;
-    let mut result = 0;
-    // let mut byte = null;
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
 
@@ -54,10 +51,8 @@ pub fn decode_polyline(str: String, precision: u32) -> Vec<[f64; 2]> {
     // loop iteration, a single coordinate is decoded.
     while index < str.len() {
 
-        // Reset shift, result, and byte
-        // byte = null;
-        shift = 0;
-        result = 0;
+        let mut shift = 0;
+        let mut result = 0;
 
         let mut byte = 0;
 
