@@ -46,14 +46,10 @@ pub fn decode_polyline(str: String, precision: u32) -> Vec<[f64; 2]> {
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
 
-    // Coordinates have variable length when encoded, so just keep
-    // track of whether we've hit the end of the string. In each
-    // loop iteration, a single coordinate is decoded.
     while index < str.len() {
 
         let mut shift = 0;
         let mut result = 0;
-
         let mut byte = 0;
 
         while {
