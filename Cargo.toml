@@ -1,0 +1,6 @@
+[package]
+name = "polyline"
+version = "0.1.0"
+authors = ["Tom MacWright <tom@macwright.org>"]
+
+[dependencies]
