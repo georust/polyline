@@ -1,27 +1,30 @@
-fn encode(current: f64, previous: f64, factor: i64) -> String {
-    "hi".to_string()
-    // current = Math.round(current * factor);
-    // previous = Math.round(previous * factor);
-    // let coordinate = current - previous;
-    // coordinate <<= 1;
-    // if current - previous < 0 {
-    //     coordinate = ~coordinate;
-    // }
-    // let mut output = "";
-    // while (coordinate >= 0x20) {
-    //     output += String.fromCharCode((0x20 | (coordinate & 0x1f)) + 63);
-    //     coordinate >>= 5;
-    // }
-    // output += String.fromCharCode(coordinate + 63);
-    // return output;
+use std::char;
+
+fn scale(n: f64, factor: i32) -> i64 {
+    let scaled: f64 = n * (factor as f64);
+    scaled.round() as i64
+}
+
+fn encode(current: f64, previous: f64, factor: i32) -> String {
+    let mut coordinate = (scale(current, factor) - scale(previous, factor)) << 1;
+    if (current - previous) < 0.0 {
+        coordinate = !coordinate;
+    }
+    let mut output: String = "".to_string();
+    while coordinate >= 0x20 {
+        output.push(char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32).unwrap());
+        coordinate >>= 5;
+    }
+    output.push(char::from_u32((coordinate  + 63) as u32).unwrap());
+    output
 }
 
 pub fn encodeCoordinates(coordinates: Vec<[f64; 2]>, precision: u32) -> String {
     if coordinates.len() == 0 {
         return "".to_string();
     }
-    let base: i64 = 10;
-    let factor = base.pow(precision);
+    let base: i32 = 10;
+    let factor: i32 = base.pow(precision);
 
     let mut output = encode(coordinates[0][0], 0.0, factor) +
         &encode(coordinates[0][1], 0.0, factor);
@@ -32,8 +35,7 @@ pub fn encodeCoordinates(coordinates: Vec<[f64; 2]>, precision: u32) -> String {
         output = output + &encode(a[0], b[0], factor);
         output = output + &encode(a[1], b[1], factor);
     }
-
-    return output;
+    output
 }
 
 #[cfg(test)]
@@ -44,6 +46,6 @@ mod tests {
     #[test]
     fn it_works() {
         let coords = vec![[1.0, 2.0], [3.0, 4.0]];
-        assert_eq!(encodeCoordinates(coords, 5), "hihihihi")
+        assert_eq!(encodeCoordinates(coords, 5), "_ibE_seK_seK_seK")
     }
 }
