@@ -2,5 +2,8 @@
 name = "polyline"
 version = "0.1.0"
 authors = ["Tom MacWright <tom@macwright.org>"]
+repository = "https://github.com/tmcw/rust-polyline"
+readme = "README.md"
+keywords = ["polyline", "geo"]
 
 [dependencies]
