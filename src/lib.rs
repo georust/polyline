@@ -32,7 +32,7 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
 /// let encodedPolyline = polyline::encode_coordinates(&coords, 5);
 /// ```
 pub fn encode_coordinates(coordinates: &Vec<[f64; 2]>, precision: u32) -> Result<String, String> {
-    if coordinates.len() == 0 {
+    if coordinates.is_empty() {
         return Ok("".to_string());
     }
     let base: i32 = 10;
@@ -41,7 +41,7 @@ pub fn encode_coordinates(coordinates: &Vec<[f64; 2]>, precision: u32) -> Result
     let mut output = try!(encode(coordinates[0][0], 0.0, factor)) +
                      &try!(encode(coordinates[0][1], 0.0, factor));
 
-    for i in 1..coordinates.len() {
+    for (i, _) in coordinates.iter().enumerate().skip(1) {
         let a = coordinates[i];
         let b = coordinates[i - 1];
         output = output + &try!(encode(a[0], b[0], factor));
@@ -77,7 +77,7 @@ pub fn decode_polyline(str: String, precision: u32) -> Result<Vec<[f64; 2]>, Str
         while {
             let at_index = try!(str.chars().nth(index).ok_or("Couldn't decode Polyline"));
             byte = at_index as u64 - 63;
-            index = index + 1;
+            index += 1;
             result |= (byte & 0x1f) << shift;
             shift += 5;
             byte >= 0x20
@@ -95,7 +95,7 @@ pub fn decode_polyline(str: String, precision: u32) -> Result<Vec<[f64; 2]>, Str
 
         while {
             byte = (str.chars().nth(index).unwrap() as u64) - 63;
-            index = index + 1;
+            index += 1;
             result |= (byte & 0x1f) << shift;
             shift += 5;
             byte >= 0x20
