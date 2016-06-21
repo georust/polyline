@@ -19,7 +19,7 @@ fn encode(current: f64, previous: f64, factor: i32) -> String {
     output
 }
 
-pub fn encode_coordinates(coordinates: Vec<[f64; 2]>, precision: u32) -> String {
+pub fn encode_coordinates(coordinates: &Vec<[f64; 2]>, precision: u32) -> String {
     if coordinates.len() == 0 {
         return "".to_string();
     }
@@ -50,7 +50,7 @@ pub fn decode_polyline(str: String, precision: u32) -> Vec<[f64; 2]> {
 
         let mut shift = 0;
         let mut result = 0;
-        let mut byte = 0;
+        let mut byte;
 
         while {
             byte = (str.chars().nth(index).unwrap() as u64) - 63;
@@ -102,8 +102,7 @@ mod tests {
     fn it_works() {
         let encoded = "_ibE_seK_seK_seK";
         let coords = vec![[1.0, 2.0], [3.0, 4.0]];
-        let coords2 = vec![[1.0, 2.0], [3.0, 4.0]];
-        assert_eq!(encode_coordinates(coords, 5), encoded);
-        assert_eq!(decode_polyline(encoded.to_string(), 5), coords2);
+        assert_eq!(encode_coordinates(&coords, 5), encoded);
+        assert_eq!(decode_polyline(encoded.to_string(), 5), coords);
     }
 }
