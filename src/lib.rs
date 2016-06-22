@@ -17,7 +17,9 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
         output.push(from_char);
         coordinate >>= 5;
     }
-    output.push(char::from_u32((coordinate + 63) as u32).unwrap());
+    let from_char = try!(char::from_u32((coordinate + 63) as u32)
+        .ok_or("Couldn't convert character"));
+    output.push(from_char);
     Ok(output)
 }
 
@@ -94,7 +96,8 @@ pub fn decode_polyline(str: String, precision: u32) -> Result<Vec<[f64; 2]>, Str
         result = 0;
 
         while {
-            byte = (str.chars().nth(index).unwrap() as u64) - 63;
+            let at_index = try!(str.chars().nth(index).ok_or("Couldn't decode Polyline"));
+            byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
             shift += 5;
