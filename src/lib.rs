@@ -1,8 +1,24 @@
 use std::char;
+use std::fmt;
+
+const MIN_LONGITUDE: f64 = -180.;
+const MAX_LONGITUDE: f64 = 180.;
+const MIN_LATITUDE: f64 = -90.0;
+const MAX_LATITUDE: f64 = 90.;
 
 fn scale(n: f64, factor: i32) -> i64 {
     let scaled: f64 = n * (factor as f64);
     scaled.round() as i64
+}
+
+// Bounds checking for input values
+fn check<T>(to_check: T, bounds: (T, T)) -> Result<T, T>
+    where T: std::cmp::PartialOrd + fmt::Display + Copy
+{
+    match to_check {
+        to_check if bounds.0 <= to_check && to_check <= bounds.1 => Ok(to_check),
+        _ => Err(to_check),
+    }
 }
 
 fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
@@ -36,6 +52,12 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
 pub fn encode_coordinates(coordinates: &Vec<[f64; 2]>, precision: u32) -> Result<String, String> {
     if coordinates.is_empty() {
         return Ok("".to_string());
+    }
+    for (i, pair) in coordinates.iter().enumerate() {
+        try!(check(pair[0], (MIN_LATITUDE, MAX_LATITUDE))
+            .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string()));
+        try!(check(pair[1], (MIN_LONGITUDE, MAX_LONGITUDE))
+            .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string()));
     }
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
@@ -156,5 +178,14 @@ mod tests {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
         let res = vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]];
         assert_eq!(decode_polyline(s.to_string(), 5).unwrap(), res);
+    }
+
+    #[test]
+    #[should_panic]
+    // Can't have a latitude > 90.0
+    fn bad_coords() {
+        let s = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
+        let res = vec![[38.5, -120.2], [40.7, -120.95], [430.252, -126.453]];
+        assert_eq!(encode_coordinates(&res, 5).unwrap(), s.to_string());
     }
 }
