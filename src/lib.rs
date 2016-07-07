@@ -148,4 +148,13 @@ mod tests {
                        test_case.input);
         }
     }
+
+    #[test]
+    #[should_panic]
+    // emoji can't be decoded
+    fn broken_string() {
+        let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
+        let res = vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]];
+        assert_eq!(decode_polyline(s.to_string(), 5).unwrap(), res);
+    }
 }
