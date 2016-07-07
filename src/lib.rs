@@ -1,5 +1,4 @@
-use std::char;
-use std::fmt;
+use std::{char, cmp};
 
 const MIN_LONGITUDE: f64 = -180.;
 const MAX_LONGITUDE: f64 = 180.;
@@ -13,7 +12,7 @@ fn scale(n: f64, factor: i32) -> i64 {
 
 // Bounds checking for input values
 fn check<T>(to_check: T, bounds: (T, T)) -> Result<T, T>
-    where T: std::cmp::PartialOrd + fmt::Display + Copy
+    where T: cmp::PartialOrd + Copy
 {
     match to_check {
         to_check if bounds.0 <= to_check && to_check <= bounds.1 => Ok(to_check),
