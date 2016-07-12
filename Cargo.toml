@@ -9,3 +9,4 @@ keywords = ["polyline", "geo"]
 license = "ISC"
 
 [dependencies]
+rand = "*"
