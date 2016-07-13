@@ -1,9 +1,9 @@
 use std::{char, cmp};
 
-const MIN_LONGITUDE: f64 = -180.;
-const MAX_LONGITUDE: f64 = 180.;
+const MIN_LONGITUDE: f64 = -180.0;
+const MAX_LONGITUDE: f64 = 180.0;
 const MIN_LATITUDE: f64 = -90.0;
-const MAX_LATITUDE: f64 = 90.;
+const MAX_LATITUDE: f64 = 90.0;
 
 fn scale(n: f64, factor: i32) -> i64 {
     let scaled: f64 = n * (factor as f64);
