@@ -1,8 +1,23 @@
-use std::char;
+use std::{char, cmp};
+
+const MIN_LONGITUDE: f64 = -180.0;
+const MAX_LONGITUDE: f64 = 180.0;
+const MIN_LATITUDE: f64 = -90.0;
+const MAX_LATITUDE: f64 = 90.0;
 
 fn scale(n: f64, factor: i32) -> i64 {
     let scaled: f64 = n * (factor as f64);
     scaled.round() as i64
+}
+
+// Bounds checking for input values
+fn check<T>(to_check: T, bounds: (T, T)) -> Result<T, T>
+    where T: cmp::PartialOrd + Copy
+{
+    match to_check {
+        to_check if bounds.0 <= to_check && to_check <= bounds.1 => Ok(to_check),
+        _ => Err(to_check),
+    }
 }
 
 fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
@@ -17,7 +32,9 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
         output.push(from_char);
         coordinate >>= 5;
     }
-    output.push(char::from_u32((coordinate + 63) as u32).unwrap());
+    let from_char = try!(char::from_u32((coordinate + 63) as u32)
+        .ok_or("Couldn't convert character"));
+    output.push(from_char);
     Ok(output)
 }
 
@@ -34,6 +51,12 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
 pub fn encode_coordinates(coordinates: &Vec<[f64; 2]>, precision: u32) -> Result<String, String> {
     if coordinates.is_empty() {
         return Ok("".to_string());
+    }
+    for (i, pair) in coordinates.iter().enumerate() {
+        try!(check(pair[0], (MIN_LATITUDE, MAX_LATITUDE))
+            .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string()));
+        try!(check(pair[1], (MIN_LONGITUDE, MAX_LONGITUDE))
+            .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string()));
     }
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
@@ -94,7 +117,8 @@ pub fn decode_polyline(str: String, precision: u32) -> Result<Vec<[f64; 2]>, Str
         result = 0;
 
         while {
-            byte = (str.chars().nth(index).unwrap() as u64) - 63;
+            let at_index = try!(str.chars().nth(index).ok_or("Couldn't decode Polyline"));
+            byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
             shift += 5;
@@ -144,5 +168,23 @@ mod tests {
             assert_eq!(decode_polyline(test_case.output.to_string(), 5).unwrap(),
                        test_case.input);
         }
+    }
+
+    #[test]
+    #[should_panic]
+    // emoji can't be decoded
+    fn broken_string() {
+        let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
+        let res = vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]];
+        assert_eq!(decode_polyline(s.to_string(), 5).unwrap(), res);
+    }
+
+    #[test]
+    #[should_panic]
+    // Can't have a latitude > 90.0
+    fn bad_coords() {
+        let s = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
+        let res = vec![[38.5, -120.2], [40.7, -120.95], [430.252, -126.453]];
+        assert_eq!(encode_coordinates(&res, 5).unwrap(), s.to_string());
     }
 }
