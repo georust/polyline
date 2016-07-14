@@ -1,8 +1,11 @@
 language: rust
 rust:
-  - stable
-  - beta
-  - nightly
-
+- stable
+- beta
+- nightly
 after_success:
-  - if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" ]; then .travis/deploy.sh; fi
+- if [ "$TRAVIS_PULL_REQUEST" == "false" -a "$TRAVIS_BRANCH" == "master" ]; then .travis/deploy.sh;
+  fi
+env:
+  global:
+    secure: IduP/yUdhjh4RYNQ8kPod9KVAarmpkx6hcDARYxfI12yrTZzrFfSxk3wfqi7IXPGfkXC+PbYyvLgTSehcabgw8owJzvZSgdhT+dtjUG1GgdOFFUNe/ZhvzjAxiAc3Yis6uvB0bR5QxnR7XlduWWgTg52TJsYh34eYcs5vvGM7DEtE7mwLJyKOS/oRwbgqILGbu0qaJVqvfWOuBFyZAZpTfbgj5QGcVNl0Lm182TV05DGO92voubR6EPmttvwTYyCGO4lTaLAWLmBMsaOL+d1pGgrGR6spYiamWrnuN2ZqT/RW6bGiHm4luEpio7H5ZzVVmWw6xYND7yuhqHWD1hes+WhRLoY5EGQ+aSpnF5mmLzt3Oa3MbbuvYcJOY/tGnQSqU7+0INf/ptMaU6IpWWa3fSSGGowB3gkwBrO/zz1KDuKkBGUm67+2rcPH9GzHPAcStIjwHr59F5IrqF8B/LQQ4ZSUi9AVGNHtKTfK1UiywCDRR5oXAsZXpvdis1aLF9kYwpjuvpr6OU8JpmbScYYKz45PjeFpkikweKHJFoCbww3QNWMFApapNIjQNM9DzeIdOY0P4L1++XrxXmhK8QuhrDO7qweRb7ZC9ak39pppiwMXXD3FRM7W6N8sLgq45ELb+rM3c0v/qusSnRzfFKyOLnv4rkMNni9K47zqElHtMA=
