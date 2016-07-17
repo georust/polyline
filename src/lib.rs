@@ -38,17 +38,20 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
     Ok(output)
 }
 
-/// Encodes a Google Encoded Polyline.
+/// Encodes a Google Encoded Polyline. Accepts a Vec or slice
 ///
 /// # Examples
 ///
 /// ```
 /// use polyline;
 ///
-/// 	let coords = vec![[1.0, 2.0], [3.0, 4.0]];
-/// let encodedPolyline = polyline::encode_coordinates(&coords, 5);
+/// let coords_vec = vec![[1.0, 2.0], [3.0, 4.0]];
+/// let encoded_vec = polyline::encode_coordinates(&coords_vec, 5).unwrap();
+/// 
+/// let coords_slice = [[1.0, 2.0], [3.0, 4.0]];
+/// let encoded_slice = polyline::encode_coordinates(&coords_slice, 5).unwrap();
 /// ```
-pub fn encode_coordinates(coordinates: &Vec<[f64; 2]>, precision: u32) -> Result<String, String> {
+pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<String, String> {
     if coordinates.is_empty() {
         return Ok("".to_string());
     }
