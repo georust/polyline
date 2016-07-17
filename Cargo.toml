@@ -1,7 +1,7 @@
 [package]
 name = "polyline"
 description = "Encoder and decoder for the Google Encoded Polyline format"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Tom MacWright <tom@macwright.org>"]
 repository = "https://github.com/georust/rust-polyline"
 readme = "README.md"

@@ -1,3 +1,7 @@
+# 0.4.0
+
+* Now accepts either a slice or a vec as argument to encode_polyline.
+
 # 0.3.0
 
 * [Now tests for invalid coordinates in decoded strings](https://github.com/georust/rust-polyline/pull/4)
