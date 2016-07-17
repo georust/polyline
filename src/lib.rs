@@ -38,7 +38,8 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
     Ok(output)
 }
 
-/// Encodes a Google Encoded Polyline. Accepts a Vec or slice
+/// Encodes a Google Encoded Polyline. Accepts a slice,
+/// or anything (such as a Vec) that can deref to a slice.
 ///
 /// # Examples
 ///
