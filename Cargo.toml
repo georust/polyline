@@ -9,3 +9,14 @@ keywords = ["polyline", "geo"]
 license = "ISC"
 
 [dependencies]
+libc = "0.2.12"
+
+[lib]
+name = "polyline_ffi"
+crate-type = ["rlib", "dylib"]
+test = true
+doctest = false
+doc = true
+
+[profile.release]
+rpath = true
