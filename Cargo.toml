@@ -12,7 +12,7 @@ license = "ISC"
 libc = "0.2.12"
 
 [lib]
-name = "polyline_ffi"
+name = "polyline"
 crate-type = ["rlib", "dylib"]
 test = true
 doctest = false
