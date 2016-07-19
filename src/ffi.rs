@@ -68,7 +68,10 @@ fn string_from_arr(incoming: Array, precision: uint32_t) -> String {
 /// # Examples
 ///
 /// ```
-/// use std::ffi:CString
+/// use std::ffi::CString;
+/// use std::slice;
+/// extern crate polyline;
+/// use polyline::{Array, decode_polyline_ffi, drop_float_array};
 /// let input = CString::new("_ibE_seK_seK_seK").unwrap().as_ptr();
 /// let result: Array = decode_polyline_ffi(input, 5);
 /// let slice = unsafe { slice::from_raw_parts(result.data as *const [f64; 2], result.len) };
@@ -106,8 +109,11 @@ pub extern "C" fn decode_polyline_ffi(pl: *const c_char, precision: uint32_t) ->
 /// extern crate libc;
 /// use libc::{c_void, size_t};
 /// use std::ffi::CStr;
+/// use std::slice;
+/// extern crate polyline;
+/// use polyline::{Array, encode_coordinates_ffi, drop_float_array};
 /// let input = vec![[1.0, 2.0], [3.0, 4.0]].as_slice();
-/// let array = Array { data: sl.as_ptr() as *const c_void, len: sl.len() as size_t };
+/// let array = Array { data: input.as_ptr() as *const c_void, len: input.len() as size_t };
 /// let output = "_ibE_seK_seK_seK".to_string(); 
 /// let pl = encode_coordinates_ffi(array, 5);
 /// let result = unsafe { CStr::from_ptr(pl).to_str().unwrap() };
