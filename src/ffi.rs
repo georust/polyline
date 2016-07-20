@@ -49,12 +49,11 @@ fn arr_from_string(incoming: String, precision: uint32_t) -> Array {
 
 // Decode an Array into a Polyline
 fn string_from_arr(incoming: Array, precision: uint32_t) -> String {
-    let result: String = match encode_coordinates(incoming.into(), precision) {
+    match encode_coordinates(incoming.into(), precision) {
         Ok(res) => res,
         // we don't need to adapt the error
         Err(res) => res,
-    };
-    result
+    }
 }
 
 /// Convert a Polyline into an array of coordinates
@@ -132,12 +131,11 @@ pub extern "C" fn decode_polyline_ffi(pl: *const c_char, precision: uint32_t) ->
 #[no_mangle]
 pub extern "C" fn encode_coordinates_ffi(coords: Array, precision: uint32_t) -> *mut c_char {
     let s: String = string_from_arr(coords, precision);
-    let result = match CString::new(s) {
+    match CString::new(s) {
         Ok(res) => res.into_raw(),
         // It's arguably better to fail noisily, but this is robust
         Err(_) => CString::new("Couldn't decode Polyline".to_string()).unwrap().into_raw(),
-    };
-    result
+    }
 }
 
 /// Free Array memory which Rust has allocated across the FFI boundary
@@ -153,7 +151,7 @@ pub extern "C" fn drop_float_array(arr: Array) {
     let _: &[[f64; 2]] = arr.into();
 }
 
-/// Free CString memory which Rust has allocated across the FFI boundary
+/// Free `CString` memory which Rust has allocated across the FFI boundary
 ///
 /// # Safety
 ///
