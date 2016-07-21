@@ -19,8 +19,8 @@ pub struct Array {
 
 
 // Build an Array from &[[f64; 2]], so it can be leaked across the FFI boundary
-impl<'a, T> From<&'a [[T; 2]]> for Array {
-    fn from(sl: &'a [[T; 2]]) -> Self {
+impl<'a> From<&'a [[f64; 2]]> for Array {
+    fn from(sl: &'a [[f64; 2]]) -> Self {
         let array = Array {
             data: sl.as_ptr() as *const c_void,
             len: sl.len() as size_t,
