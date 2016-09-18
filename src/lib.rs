@@ -1,5 +1,12 @@
 use std::{char, cmp};
 
+mod ffi;
+pub use ffi::Array;
+pub use ffi::encode_coordinates_ffi;
+pub use ffi::decode_polyline_ffi;
+pub use ffi::drop_float_array;
+pub use ffi::drop_cstring;
+
 const MIN_LONGITUDE: f64 = -180.0;
 const MAX_LONGITUDE: f64 = 180.0;
 const MIN_LATITUDE: f64 = -90.0;
