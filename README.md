@@ -4,3 +4,5 @@
 [![Build Status](https://travis-ci.org/georust/rust-polyline.svg?branch=master)](https://travis-ci.org/georust/rust-polyline)
 
 Google Encoded Polyline encoding & decoding in Rust.
+
+[Documentation](https://docs.rs/polyline/)
