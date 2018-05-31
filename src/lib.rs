@@ -6,7 +6,7 @@ const MIN_LATITUDE: f64 = -90.0;
 const MAX_LATITUDE: f64 = 90.0;
 
 fn scale(n: f64, factor: i32) -> i64 {
-    let scaled: f64 = n * (factor as f64);
+    let scaled = n * (f64::from(factor));
     scaled.round() as i64
 }
 
@@ -85,15 +85,15 @@ pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<St
 /// ```
 /// use polyline;
 ///
-/// let decodedPolyline = polyline::decode_polyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@".to_string(), 5);
+/// let decodedPolyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
 /// ```
-pub fn decode_polyline(str: String, precision: u32) -> Result<Vec<[f64; 2]>, String> {
+pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, String> {
     let mut index = 0;
     let mut lat: i64 = 0;
     let mut lng: i64 = 0;
     let mut coordinates = vec![];
     let base: i32 = 10;
-    let factor: i64 = base.pow(precision) as i64;
+    let factor = i64::from(base.pow(precision));
 
     while index < str.len() {
 
@@ -169,7 +169,7 @@ mod tests {
         for test_case in test_cases {
             assert_eq!(encode_coordinates(&test_case.input, 5).unwrap(),
                        test_case.output);
-            assert_eq!(decode_polyline(test_case.output.to_string(), 5).unwrap(),
+            assert_eq!(decode_polyline(&test_case.output, 5).unwrap(),
                        test_case.input);
         }
     }
@@ -180,7 +180,7 @@ mod tests {
     fn broken_string() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
         let res = vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]];
-        assert_eq!(decode_polyline(s.to_string(), 5).unwrap(), res);
+        assert_eq!(decode_polyline(&s, 5).unwrap(), res);
     }
 
     #[test]
@@ -189,6 +189,6 @@ mod tests {
     fn bad_coords() {
         let s = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
         let res = vec![[38.5, -120.2], [40.7, -120.95], [430.252, -126.453]];
-        assert_eq!(encode_coordinates(&res, 5).unwrap(), s.to_string());
+        assert_eq!(encode_coordinates(&res, 5).unwrap(), s);
     }
 }
