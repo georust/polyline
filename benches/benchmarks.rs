@@ -16,7 +16,7 @@ fn bench_threads(b: &mut Bencher) {
     let between_lat = Range::new(49.871159, 55.811741);
     let mut rng = rand::thread_rng();
     let res = vec![[between_lat.sample(&mut rng), between_lon.sample(&mut rng)]; num_coords];
-    b.iter(||{
+    b.iter(|| {
         encode_coordinates(&res, 5);
     });
 }

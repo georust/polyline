@@ -12,7 +12,8 @@ fn scale(n: f64, factor: i32) -> i64 {
 
 // Bounds checking for input values
 fn check<T>(to_check: T, bounds: (T, T)) -> Result<T, T>
-    where T: cmp::PartialOrd + Copy
+where
+    T: cmp::PartialOrd + Copy,
 {
     match to_check {
         to_check if bounds.0 <= to_check && to_check <= bounds.1 => Ok(to_check),
@@ -27,13 +28,15 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
     }
     let mut output: String = "".to_string();
     while coordinate >= 0x20 {
-        let from_char = try!(char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32)
-            .ok_or("Couldn't convert character"));
+        let from_char = try!(
+            char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32)
+                .ok_or("Couldn't convert character")
+        );
         output.push(from_char);
         coordinate >>= 5;
     }
-    let from_char = try!(char::from_u32((coordinate + 63) as u32)
-        .ok_or("Couldn't convert character"));
+    let from_char =
+        try!(char::from_u32((coordinate + 63) as u32).ok_or("Couldn't convert character"));
     output.push(from_char);
     Ok(output)
 }
@@ -48,7 +51,7 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
 ///
 /// let coords_vec = vec![[1.0, 2.0], [3.0, 4.0]];
 /// let encoded_vec = polyline::encode_coordinates(&coords_vec, 5).unwrap();
-/// 
+///
 /// let coords_slice = [[1.0, 2.0], [3.0, 4.0]];
 /// let encoded_slice = polyline::encode_coordinates(&coords_slice, 5).unwrap();
 /// ```
@@ -57,16 +60,20 @@ pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<St
         return Ok("".to_string());
     }
     for (i, pair) in coordinates.iter().enumerate() {
-        try!(check(pair[0], (MIN_LATITUDE, MAX_LATITUDE))
-            .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string()));
-        try!(check(pair[1], (MIN_LONGITUDE, MAX_LONGITUDE))
-            .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string()));
+        try!(
+            check(pair[0], (MIN_LATITUDE, MAX_LATITUDE))
+                .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string())
+        );
+        try!(
+            check(pair[1], (MIN_LONGITUDE, MAX_LONGITUDE))
+                .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string())
+        );
     }
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
 
-    let mut output = try!(encode(coordinates[0][0], 0.0, factor)) +
-                     &try!(encode(coordinates[0][1], 0.0, factor));
+    let mut output = try!(encode(coordinates[0][0], 0.0, factor))
+        + &try!(encode(coordinates[0][1], 0.0, factor));
 
     for (i, _) in coordinates.iter().enumerate().skip(1) {
         let a = coordinates[i];
@@ -76,7 +83,6 @@ pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<St
     }
     Ok(output)
 }
-
 
 /// Decodes a Google Encoded Polyline.
 ///
@@ -96,7 +102,6 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
     let factor = i64::from(base.pow(precision));
 
     while index < str.len() {
-
         let mut shift = 0;
         let mut result = 0;
         let mut byte;
@@ -108,8 +113,7 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
             result |= (byte & 0x1f) << shift;
             shift += 5;
             byte >= 0x20
-        } {
-        }
+        } {}
 
         let latitude_change: i64 = if (result & 1) > 0 {
             !(result >> 1)
@@ -127,8 +131,7 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
             result |= (byte & 0x1f) << shift;
             shift += 5;
             byte >= 0x20
-        } {
-        }
+        } {}
 
         let longitude_change: i64 = if (result & 1) > 0 {
             !(result >> 1)
@@ -148,8 +151,8 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
 #[cfg(test)]
 mod tests {
 
-    use super::encode_coordinates;
     use super::decode_polyline;
+    use super::encode_coordinates;
 
     struct TestCase {
         input: Vec<[f64; 2]>,
@@ -158,19 +161,25 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let test_cases = vec![TestCase {
-                                  input: vec![[1.0, 2.0], [3.0, 4.0]],
-                                  output: "_ibE_seK_seK_seK",
-                              },
-                              TestCase {
-                                  input: vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]],
-                                  output: "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
-                              }];
+        let test_cases = vec![
+            TestCase {
+                input: vec![[1.0, 2.0], [3.0, 4.0]],
+                output: "_ibE_seK_seK_seK",
+            },
+            TestCase {
+                input: vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]],
+                output: "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
+            },
+        ];
         for test_case in test_cases {
-            assert_eq!(encode_coordinates(&test_case.input, 5).unwrap(),
-                       test_case.output);
-            assert_eq!(decode_polyline(&test_case.output, 5).unwrap(),
-                       test_case.input);
+            assert_eq!(
+                encode_coordinates(&test_case.input, 5).unwrap(),
+                test_case.output
+            );
+            assert_eq!(
+                decode_polyline(&test_case.output, 5).unwrap(),
+                test_case.input
+            );
         }
     }
 
