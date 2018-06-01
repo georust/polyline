@@ -28,15 +28,12 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
     }
     let mut output: String = "".to_string();
     while coordinate >= 0x20 {
-        let from_char = try!(
-            char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32)
-                .ok_or("Couldn't convert character")
-        );
+        let from_char = char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32)
+            .ok_or("Couldn't convert character")?;
         output.push(from_char);
         coordinate >>= 5;
     }
-    let from_char =
-        try!(char::from_u32((coordinate + 63) as u32).ok_or("Couldn't convert character"));
+    let from_char = char::from_u32((coordinate + 63) as u32).ok_or("Couldn't convert character")?;
     output.push(from_char);
     Ok(output)
 }
@@ -60,26 +57,23 @@ pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<St
         return Ok("".to_string());
     }
     for (i, pair) in coordinates.iter().enumerate() {
-        try!(
-            check(pair[0], (MIN_LATITUDE, MAX_LATITUDE))
-                .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string())
-        );
-        try!(
-            check(pair[1], (MIN_LONGITUDE, MAX_LONGITUDE))
-                .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string())
-        );
+        check(pair[0], (MIN_LATITUDE, MAX_LATITUDE))
+            .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string())?;
+
+        check(pair[1], (MIN_LONGITUDE, MAX_LONGITUDE))
+            .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string())?;
     }
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
 
-    let mut output = try!(encode(coordinates[0][0], 0.0, factor))
-        + &try!(encode(coordinates[0][1], 0.0, factor));
+    let mut output =
+        encode(coordinates[0][0], 0.0, factor)? + &encode(coordinates[0][1], 0.0, factor)?;
 
     for (i, _) in coordinates.iter().enumerate().skip(1) {
         let a = coordinates[i];
         let b = coordinates[i - 1];
-        output = output + &try!(encode(a[0], b[0], factor));
-        output = output + &try!(encode(a[1], b[1], factor));
+        output = output + &encode(a[0], b[0], factor)?;
+        output = output + &encode(a[1], b[1], factor)?;
     }
     Ok(output)
 }
@@ -107,7 +101,7 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
         let mut byte;
 
         while {
-            let at_index = try!(str.chars().nth(index).ok_or("Couldn't decode Polyline"));
+            let at_index = str.chars().nth(index).ok_or("Couldn't decode Polyline")?;
             byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
@@ -125,7 +119,7 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
         result = 0;
 
         while {
-            let at_index = try!(str.chars().nth(index).ok_or("Couldn't decode Polyline"));
+            let at_index = str.chars().nth(index).ok_or("Couldn't decode Polyline")?;
             byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
