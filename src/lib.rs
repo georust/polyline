@@ -100,14 +100,19 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, 
         let mut result = 0;
         let mut byte;
 
-        while {
-            let at_index = polyline.chars().nth(index).ok_or("Couldn't decode Polyline")?;
+        loop {
+            let at_index = polyline
+                .chars()
+                .nth(index)
+                .ok_or("Couldn't decode Polyline")?;
             byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
             shift += 5;
-            byte >= 0x20
-        } {}
+            if byte < 0x20 {
+                break;
+            }
+        }
 
         let latitude_change: i64 = if (result & 1) > 0 {
             !(result >> 1)
@@ -118,14 +123,19 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, 
         shift = 0;
         result = 0;
 
-        while {
-            let at_index = polyline.chars().nth(index).ok_or("Couldn't decode Polyline")?;
+        loop {
+            let at_index = polyline
+                .chars()
+                .nth(index)
+                .ok_or("Couldn't decode Polyline")?;
             byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
             shift += 5;
-            byte >= 0x20
-        } {}
+            if byte < 0x20 {
+                break;
+            }
+        }
 
         let longitude_change: i64 = if (result & 1) > 0 {
             !(result >> 1)
