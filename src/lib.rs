@@ -89,6 +89,7 @@ pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<St
 /// ```
 pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, String> {
     let mut index = 0;
+    let mut at_index;
     let mut lat: i64 = 0;
     let mut lng: i64 = 0;
     let mut coordinates = vec![];
@@ -101,7 +102,7 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, 
         let mut byte;
 
         loop {
-            let at_index = polyline
+            at_index = polyline
                 .chars()
                 .nth(index)
                 .ok_or("Couldn't decode Polyline")?;
@@ -124,7 +125,7 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, 
         result = 0;
 
         loop {
-            let at_index = polyline
+            at_index = polyline
                 .chars()
                 .nth(index)
                 .ok_or("Couldn't decode Polyline")?;
