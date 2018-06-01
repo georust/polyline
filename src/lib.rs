@@ -87,7 +87,7 @@ pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<St
 ///
 /// let decodedPolyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
 /// ```
-pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, String> {
+pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, String> {
     let mut index = 0;
     let mut lat: i64 = 0;
     let mut lng: i64 = 0;
@@ -95,13 +95,13 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
     let base: i32 = 10;
     let factor = i64::from(base.pow(precision));
 
-    while index < str.len() {
+    while index < polyline.len() {
         let mut shift = 0;
         let mut result = 0;
         let mut byte;
 
         while {
-            let at_index = str.chars().nth(index).ok_or("Couldn't decode Polyline")?;
+            let at_index = polyline.chars().nth(index).ok_or("Couldn't decode Polyline")?;
             byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
@@ -119,7 +119,7 @@ pub fn decode_polyline(str: &str, precision: u32) -> Result<Vec<[f64; 2]>, Strin
         result = 0;
 
         while {
-            let at_index = str.chars().nth(index).ok_or("Couldn't decode Polyline")?;
+            let at_index = polyline.chars().nth(index).ok_or("Couldn't decode Polyline")?;
             byte = at_index as u64 - 63;
             index += 1;
             result |= (byte & 0x1f) << shift;
