@@ -1,3 +1,7 @@
+# 0.5.0
+
+* [`decode_polyline()` now accepts a string slice instead of a `String`](https://github.com/georust/rust-polyline/pull/10).
+
 # 0.4.0
 
 * Now accepts either a slice or a vec as argument to encode_polyline.
