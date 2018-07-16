@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tmcw/rust-polyline"
+    "url": "https://github.com/georust/polyline"
   },
   "author": "Tom MacWright <tom@macwright.org>",
   "license": "MIT",
