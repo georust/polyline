@@ -4,13 +4,6 @@
 //! is a lossy compression algorithm that allows you to store a series of coordinates as a
 //! single string.
 //!
-//! The encoding process converts a binary value into a series of character codes for ASCII
-//! characters using the familiar base64 encoding scheme: to ensure proper display of these
-//! characters, encoded values are summed with 63 (the ASCII character '?') before converting
-//! them into ASCII. The algorithm also checks for additional character codes for a given
-//! point by checking the least significant bit of each byte group; if this bit is set to 1,
-//! the point is not yet fully formed and additional data must follow.
-//!
 //! # Example
 //!
 //! Points: (38.5, -120.2), (40.7, -120.95), (43.252, -126.453)
