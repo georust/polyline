@@ -1,3 +1,22 @@
+//! # Google Encoded Polyline encoding & decoding in Rust
+//!
+//! [Polyline](https://developers.google.com/maps/documentation/utilities/polylinealgorithm)
+//! is a lossy compression algorithm that allows you to store a series of coordinates as a
+//! single string.
+//!
+//! # Example
+//!
+//! Points: (38.5, -120.2), (40.7, -120.95), (43.252, -126.453)
+//!
+//! Encoded polyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@""
+//! ```
+//! use polyline;
+//!
+//! let coord = vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]];
+//! let output = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
+//! let result = polyline::encode_coordinates(&coord, 5).unwrap();
+//! assert_eq!(result, output)
+//! ```
 use std::{char, cmp};
 
 const MIN_LONGITUDE: f64 = -180.0;
