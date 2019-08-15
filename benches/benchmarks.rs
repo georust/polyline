@@ -1,7 +1,6 @@
 #![feature(test)]
 extern crate test;
 use test::Bencher;
-extern crate polyline;
 use polyline::encode_coordinates;
 
 extern crate rand;
