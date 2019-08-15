@@ -3,6 +3,7 @@ extern crate criterion;
 use criterion::Criterion;
 use polyline::encode_coordinates;
 use rand::distributions::{Distribution, Range};
+use geo_types::LineString;
 
 #[allow(unused_must_use)]
 fn bench_threads(c: &mut Criterion) {
@@ -12,8 +13,9 @@ fn bench_threads(c: &mut Criterion) {
     let between_lat = Range::new(49.871159, 55.811741);
     let mut rng = rand::thread_rng();
     let res = vec![[between_lat.sample(&mut rng), between_lon.sample(&mut rng)]; num_coords];
+    let res : LineString<f64> = res.into();
     c.bench_function("bench threads", move |b| b.iter(|| {
-        encode_coordinates(&res, 5);
+        encode_coordinates(res.clone(), 5);
     }));
 }
 
