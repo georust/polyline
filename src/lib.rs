@@ -43,8 +43,10 @@ where
 }
 
 fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
-    let mut coordinate = (scale(current, factor) - scale(previous, factor)) << 1;
-    if (current - previous) < 0.0 {
+    let current = scale(current, factor);
+    let previous = scale(previous, factor);
+    let mut coordinate = (current - previous) << 1;
+    if (current - previous) < 0 {
         coordinate = !coordinate;
     }
     let mut output: String = "".to_string();
@@ -201,6 +203,21 @@ mod tests {
                 test_case.input
             );
         }
+    }
+
+    #[test]
+    // coordinates close to each other (below precision) should work
+    fn rounding_error() {
+        let poly = "cr_iI}co{@?dB";
+        let res : LineString<f64> = vec![[9.9131118, 54.0702648], [9.9126013, 54.0702578]].into();
+        assert_eq!(
+            encode_coordinates(res, 5).unwrap(),
+            poly
+        );
+        assert_eq!(
+            decode_polyline(&poly, 5).unwrap(),
+            vec![[9.91311, 54.07026], [9.91260, 54.07026]].into()
+        );
     }
 
     #[test]
