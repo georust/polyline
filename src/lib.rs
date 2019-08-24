@@ -11,13 +11,15 @@
 //! Encoded polyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@""
 //! ```
 //! use polyline;
+//! use geo_types::line_string;
 //!
-//! let coord = vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]];
+//! let coord = line_string![(x: -120.2, y: 38.5), (x: -120.95, y: 40.7), (x: -126.453, y: 43.252)];
 //! let output = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
-//! let result = polyline::encode_coordinates(&coord, 5).unwrap();
+//! let result = polyline::encode_coordinates(coord, 5).unwrap();
 //! assert_eq!(result, output)
 //! ```
 use std::{char, cmp};
+use geo_types::{Coordinate, LineString};
 
 const MIN_LONGITUDE: f64 = -180.0;
 const MAX_LONGITUDE: f64 = 180.0;
@@ -41,8 +43,10 @@ where
 }
 
 fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
-    let mut coordinate = (scale(current, factor) - scale(previous, factor)) << 1;
-    if (current - previous) < 0.0 {
+    let current = scale(current, factor);
+    let previous = scale(previous, factor);
+    let mut coordinate = (current - previous) << 1;
+    if (current - previous) < 0 {
         coordinate = !coordinate;
     }
     let mut output: String = "".to_string();
@@ -57,42 +61,35 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
     Ok(output)
 }
 
-/// Encodes a Google Encoded Polyline. Accepts a slice,
-/// or anything (such as a Vec) that can deref to a slice.
+/// Encodes a Google Encoded Polyline.
 ///
 /// # Examples
 ///
 /// ```
 /// use polyline;
+/// use geo_types::line_string;
 ///
-/// let coords_vec = vec![[1.0, 2.0], [3.0, 4.0]];
-/// let encoded_vec = polyline::encode_coordinates(&coords_vec, 5).unwrap();
-///
-/// let coords_slice = [[1.0, 2.0], [3.0, 4.0]];
-/// let encoded_slice = polyline::encode_coordinates(&coords_slice, 5).unwrap();
+/// let coords = line_string![(x: 2.0, y: 1.0), (x: 4.0, y: 3.0)];
+/// let encoded_vec = polyline::encode_coordinates(coords, 5).unwrap();
 /// ```
-pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<String, String> {
-    if coordinates.is_empty() {
-        return Ok("".to_string());
-    }
-    for (i, pair) in coordinates.iter().enumerate() {
-        check(pair[0], (MIN_LATITUDE, MAX_LATITUDE))
-            .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string())?;
-
-        check(pair[1], (MIN_LONGITUDE, MAX_LONGITUDE))
-            .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string())?;
-    }
+pub fn encode_coordinates<C>(coordinates: C, precision: u32) -> Result<String, String>
+where
+    C: IntoIterator<Item=Coordinate<f64>>,
+{
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
 
-    let mut output =
-        encode(coordinates[0][0], 0.0, factor)? + &encode(coordinates[0][1], 0.0, factor)?;
+    let mut output = "".to_string();
+    let mut b = Coordinate { x: 0.0, y: 0.0 };
 
-    for (i, _) in coordinates.iter().enumerate().skip(1) {
-        let a = coordinates[i];
-        let b = coordinates[i - 1];
-        output = output + &encode(a[0], b[0], factor)?;
-        output = output + &encode(a[1], b[1], factor)?;
+    for (i, a) in coordinates.into_iter().enumerate() {
+        check(a.y, (MIN_LATITUDE, MAX_LATITUDE))
+            .map_err(|e| format!("Latitude error at position {0}: {1}", i, e).to_string())?;
+        check(a.x, (MIN_LONGITUDE, MAX_LONGITUDE))
+            .map_err(|e| format!("Longitude error at position {0}: {1}", i, e).to_string())?;
+        output = output + &encode(a.y, b.y, factor)?;
+        output = output + &encode(a.x, b.x, factor)?;
+        b = a;
     }
     Ok(output)
 }
@@ -106,7 +103,7 @@ pub fn encode_coordinates(coordinates: &[[f64; 2]], precision: u32) -> Result<St
 ///
 /// let decodedPolyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
 /// ```
-pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, String> {
+pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>, String> {
     let mut index = 0;
     let mut at_index;
     let mut lat: i64 = 0;
@@ -166,10 +163,10 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<Vec<[f64; 2]>, 
         lat += latitude_change;
         lng += longitude_change;
 
-        coordinates.push([lat as f64 / factor as f64, lng as f64 / factor as f64]);
+        coordinates.push([lng as f64 / factor as f64, lat as f64 / factor as f64]);
     }
 
-    Ok(coordinates)
+    Ok(coordinates.into())
 }
 
 #[cfg(test)]
@@ -177,9 +174,10 @@ mod tests {
 
     use super::decode_polyline;
     use super::encode_coordinates;
+    use geo_types::LineString;
 
     struct TestCase {
-        input: Vec<[f64; 2]>,
+        input: LineString<f64>,
         output: &'static str,
     }
 
@@ -187,17 +185,17 @@ mod tests {
     fn it_works() {
         let test_cases = vec![
             TestCase {
-                input: vec![[1.0, 2.0], [3.0, 4.0]],
+                input: vec![[2.0, 1.0], [4.0, 3.0]].into(),
                 output: "_ibE_seK_seK_seK",
             },
             TestCase {
-                input: vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]],
+                input: vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 43.252]].into(),
                 output: "_p~iF~ps|U_ulLnnqC_mqNvxq`@",
             },
         ];
         for test_case in test_cases {
             assert_eq!(
-                encode_coordinates(&test_case.input, 5).unwrap(),
+                encode_coordinates(test_case.input.clone(), 5).unwrap(),
                 test_case.output
             );
             assert_eq!(
@@ -208,11 +206,26 @@ mod tests {
     }
 
     #[test]
+    // coordinates close to each other (below precision) should work
+    fn rounding_error() {
+        let poly = "cr_iI}co{@?dB";
+        let res : LineString<f64> = vec![[9.9131118, 54.0702648], [9.9126013, 54.0702578]].into();
+        assert_eq!(
+            encode_coordinates(res, 5).unwrap(),
+            poly
+        );
+        assert_eq!(
+            decode_polyline(&poly, 5).unwrap(),
+            vec![[9.91311, 54.07026], [9.91260, 54.07026]].into()
+        );
+    }
+
+    #[test]
     #[should_panic]
     // emoji can't be decoded
     fn broken_string() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
-        let res = vec![[38.5, -120.2], [40.7, -120.95], [43.252, -126.453]];
+        let res = vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 43.252]].into();
         assert_eq!(decode_polyline(&s, 5).unwrap(), res);
     }
 
@@ -221,7 +234,7 @@ mod tests {
     // Can't have a latitude > 90.0
     fn bad_coords() {
         let s = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
-        let res = vec![[38.5, -120.2], [40.7, -120.95], [430.252, -126.453]];
-        assert_eq!(encode_coordinates(&res, 5).unwrap(), s);
+        let res : LineString<f64> = vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 430.252]].into();
+        assert_eq!(encode_coordinates(res, 5).unwrap(), s);
     }
 }
