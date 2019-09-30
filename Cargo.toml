@@ -6,7 +6,7 @@ authors = ["Tom MacWright <tom@macwright.org>"]
 repository = "https://github.com/georust/polyline"
 readme = "README.md"
 keywords = ["polyline", "geo"]
-license = "ISC"
+license = "MIT/Apache-2.0"
 edition = "2018"
 
 [dependencies]
