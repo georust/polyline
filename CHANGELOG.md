@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0
+
+* [Relicense to MIT / Apache v2](https://github.com/georust/polyline/pull/18)
+
 ## 0.6.0
 
 * [Mark `rand` as a dev-dependency.](https://github.com/georust/polyline/pull/12)
