@@ -6,9 +6,6 @@
 //!
 //! # Example
 //!
-//! Points: (38.5, -120.2), (40.7, -120.95), (43.252, -126.453)
-//!
-//! Encoded polyline: "_p~iF~ps|U_ulLnnqC_mqNvxq`@""
 //! ```
 //! use polyline;
 //! use geo_types::line_string;
@@ -18,6 +15,13 @@
 //! let result = polyline::encode_coordinates(coord, 5).unwrap();
 //! assert_eq!(result, output)
 //! ```
+//!
+//!# A Note on Coordinate Order
+//!
+//! This crate uses `Coordinate` and `LineString` types from the `geo-types` crate, which encodes coordinates
+//! in `(x, y)` order. The Polyline algorithm and first-party documentation assumes the _opposite_ coordinate order.
+//! It is thus advisable to pay careful attention to the order of the coordinates you use for encoding and decoding.
+
 use std::{char, cmp};
 use geo_types::{Coordinate, LineString};
 

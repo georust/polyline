@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.3
+* Add note on coordinate order
+
 ## 0.7.1
 * Bump `geo-types` to [0.5](https://github.com/georust/polyline/pull/21)
 
