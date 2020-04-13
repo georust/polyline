@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.1
+* Bump `geo-types` to [0.5](https://github.com/georust/polyline/pull/21)
+
 ## 0.7.0
 
 * [Relicense to MIT / Apache v2](https://github.com/georust/polyline/pull/18)
