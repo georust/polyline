@@ -5,4 +5,8 @@
 
 Google Encoded Polyline encoding & decoding in Rust.
 
+## A Note on Coordinate Order
+
+This crate uses `Coordinate` and `LineString` types from the `geo-types` crate, which encodes coordinates in `(x, y)` order. The Polyline algorithm and first-party documentation assumes the _opposite_ coordinate order. It is thus advisable to pay careful attention to the order of the coordinates you use for encoding and decoding.
+
 [Documentation](https://docs.rs/polyline/)
