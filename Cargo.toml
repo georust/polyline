@@ -1,7 +1,7 @@
 [package]
 name = "polyline"
 description = "Encoder and decoder for the Google Encoded Polyline format"
-version = "0.7.2"
+version = "0.8.0"
 authors = ["Tom MacWright <tom@macwright.org>", "The GeoRust Developers"]
 repository = "https://github.com/georust/polyline"
 readme = "README.md"
@@ -10,7 +10,7 @@ license = "MIT/Apache-2.0"
 edition = "2018"
 
 [dependencies]
-geo-types = "0.5"
+geo-types = "0.6"
 
 [dev-dependencies]
 rand = "0.5.0"
