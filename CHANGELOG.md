@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.0
+* Bump geo-types dependency to 0.6
+
 ## 0.7.3
 * Add note on coordinate order
 
