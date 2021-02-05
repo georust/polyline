@@ -2,6 +2,7 @@
 
 ## 0.9.0
 * Update `geo-types` dependency to allow for 0.6 or 0.7
+* Switch CI to Github actions
 
 ## 0.8.0
 * Bump geo-types dependency to 0.6
