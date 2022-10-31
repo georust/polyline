@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate criterion;
 use criterion::Criterion;
-use polyline::encode_coordinates;
-use rand::distributions::{Distribution, Range};
 use geo_types::LineString;
+use polyline::{decode_polyline, encode_coordinates};
+use rand::distributions::{Distribution, Range};
 
 #[allow(unused_must_use)]
 fn bench_threads(c: &mut Criterion) {
@@ -19,5 +19,15 @@ fn bench_threads(c: &mut Criterion) {
     }));
 }
 
-criterion_group!(benches, bench_threads);
+fn bench_decode(c: &mut Criterion) {
+    const poly: &str = r#"oxl~E}noyDBCJ?LED@PIZA\KR?h@UBBHEF?^GPIP?r@M`@Md@C`AWb@?XKvB]hAWfAMt@_@T?VG\IXK|@Sf@Un@G\ONMNGBMHIXMRE`@WFIRC\Wp@Mh@WHQBWJEHQJIBIG_A@{@QsC@eAC]?{@ImA?g@CcBHaBCeAEo@@aDCqAFSJKJGv@?RKd@IFM?UDPBAB@?BB?C@AHDEGC?G@?G@^Pr@Ln@DRDzCCvABf@U^_@HCn@?h@EfD_@pAKl@KfAG^Gb@AHHVZDHDPP`CDnAHf@b@dAj@t@FBBA~AiBvBs@NAPH`@d@b@\z@t@j@x@BB@A"#;
+
+    c.bench_function("bench decode", move |b| {
+        b.iter(|| {
+            decode_polyline(&poly, 5);
+        })
+    });
+}
+
+criterion_group!(benches, bench_threads, bench_decode);
 criterion_main!(benches);

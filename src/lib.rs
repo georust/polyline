@@ -108,13 +108,15 @@ where
 /// let decodedPolyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
 /// ```
 pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>, String> {
+    let chars = polyline.as_bytes();
     let mut index = 0;
-    let mut at_index;
     let mut lat: i64 = 0;
     let mut lng: i64 = 0;
     let mut coordinates = vec![];
     let base: i32 = 10;
-    let factor = i64::from(base.pow(precision));
+    let factor = i64::from(base.pow(precision)) as f64;
+
+    coordinates.reserve(chars.len());
 
     while index < polyline.len() {
         let mut shift = 0;
@@ -122,13 +124,9 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         let mut byte;
 
         loop {
-            at_index = polyline
-                .chars()
-                .nth(index)
-                .ok_or("Couldn't decode Polyline")?;
-            byte = at_index as u64 - 63;
+            byte = chars.get(index).ok_or("Couldn't decode Polyline")? - 63;
+            result |= (byte as u64 & 0x1f) << shift;
             index += 1;
-            result |= (byte & 0x1f) << shift;
             shift += 5;
             if byte < 0x20 {
                 break;
@@ -145,13 +143,9 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         result = 0;
 
         loop {
-            at_index = polyline
-                .chars()
-                .nth(index)
-                .ok_or("Couldn't decode Polyline")?;
-            byte = at_index as u64 - 63;
+            byte = chars.get(index).ok_or("Couldn't decode Polyline")? - 63;
             index += 1;
-            result |= (byte & 0x1f) << shift;
+            result |= (byte as u64 & 0x1f) << shift;
             shift += 5;
             if byte < 0x20 {
                 break;
@@ -167,10 +161,13 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         lat += latitude_change;
         lng += longitude_change;
 
-        coordinates.push([lng as f64 / factor as f64, lat as f64 / factor as f64]);
+        coordinates.push(Coordinate {
+            y: lat as f64 / factor,
+            x: lng as f64 / factor,
+        });
     }
 
-    Ok(coordinates.into())
+    Ok(LineString::new(coordinates))
 }
 
 #[cfg(test)]
