@@ -30,5 +30,23 @@ fn bench_polyline6_decoding(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, bench_threads, bench_polyline6_decoding);
+#[allow(unused_must_use)]
+fn bench_polyline6_decoding_huge(c: &mut Criterion) {
+    c.bench_function("bench HUGE polyline6 decoding", move |b| {
+        b.iter(|| {
+            decode_polyline(
+                include_str!("../route-geometry-sweden-west-coast.polyline6"),
+                6,
+            )
+            .unwrap();
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    bench_threads,
+    bench_polyline6_decoding,
+    bench_polyline6_decoding_huge
+);
 criterion_main!(benches);
