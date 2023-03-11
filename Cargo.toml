@@ -13,8 +13,8 @@ edition = "2018"
 geo-types = ">=0.6, <0.8"
 
 [dev-dependencies]
-rand = "0.5.0"
-criterion = "0.2"
+rand = "0.8.5"
+criterion = "0.4"
 
 [[bench]]
 name = "benchmarks"
