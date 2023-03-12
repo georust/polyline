@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate criterion;
 use criterion::Criterion;
-use polyline::encode_coordinates;
-use rand::distributions::{Distribution, Range};
 use geo_types::LineString;
+use polyline::{decode_polyline, encode_coordinates};
+use rand::distributions::{Distribution, Range};
 
 #[allow(unused_must_use)]
 fn bench_threads(c: &mut Criterion) {
@@ -13,11 +13,40 @@ fn bench_threads(c: &mut Criterion) {
     let between_lat = Range::new(49.871159, 55.811741);
     let mut rng = rand::thread_rng();
     let res = vec![[between_lat.sample(&mut rng), between_lon.sample(&mut rng)]; num_coords];
-    let res : LineString<f64> = res.into();
-    c.bench_function("bench threads", move |b| b.iter(|| {
-        encode_coordinates(res.clone(), 5);
-    }));
+    let res: LineString<f64> = res.into();
+    c.bench_function("bench threads", move |b| {
+        b.iter(|| {
+            encode_coordinates(res.clone(), 5);
+        })
+    });
 }
 
-criterion_group!(benches, bench_threads);
+#[allow(unused_must_use)]
+fn bench_polyline6_decoding(c: &mut Criterion) {
+    c.bench_function("bench polyline6 decoding", move |b| {
+        b.iter(|| {
+            decode_polyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@", 6).unwrap();
+        })
+    });
+}
+
+#[allow(unused_must_use)]
+fn bench_polyline6_decoding_huge(c: &mut Criterion) {
+    c.bench_function("bench HUGE polyline6 decoding", move |b| {
+        b.iter(|| {
+            decode_polyline(
+                include_str!("../route-geometry-sweden-west-coast.polyline6"),
+                6,
+            )
+            .unwrap();
+        })
+    });
+}
+
+criterion_group!(
+    benches,
+    bench_threads,
+    bench_polyline6_decoding,
+    bench_polyline6_decoding_huge
+);
 criterion_main!(benches);

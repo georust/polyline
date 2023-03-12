@@ -1,8 +1,8 @@
 [package]
 name = "polyline"
 description = "Encoder and decoder for the Google Encoded Polyline format"
-version = "0.9.0"
-authors = ["Tom MacWright <tom@macwright.org>", "The GeoRust Developers"]
+version = "0.10.0"
+authors = ["Tom MacWright <tom@macwright.org>", "The GeoRust Developers <mods@georust.org>"]
 repository = "https://github.com/georust/polyline"
 readme = "README.md"
 keywords = ["polyline", "geo"]

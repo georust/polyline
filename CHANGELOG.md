@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0
+
+* Update Coordinates to Coord due to geo-types change
+* Apply clippy suggestions
+* Update dependencies
+* Refactor decoding logic for perf improvement (https://github.com/georust/polyline/pull/28)
+
 ## 0.9.0
 * Update `geo-types` dependency to allow for 0.6 or 0.7
 * Switch CI to Github actions
