@@ -118,11 +118,11 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
     let chars = polyline.as_bytes();
 
     while index < chars.len() {
-        let (latitude_change, new_index) = trans(&chars, index);
+        let (latitude_change, new_index) = trans(chars, index);
         if new_index >= chars.len() {
             break;
         }
-        let (longitude_change, new_index) = trans(&chars, new_index);
+        let (longitude_change, new_index) = trans(chars, new_index);
         index = new_index;
 
         lat += latitude_change;
