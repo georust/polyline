@@ -55,7 +55,7 @@ fn bench_polyline6_decoding_huge(c: &mut Criterion) {
     c.bench_function("bench HUGE polyline6 decoding", move |b| {
         b.iter(|| {
             decode_polyline(
-                include_str!("../route-geometry-sweden-west-coast.polyline6"),
+                include_str!("../resources/route-geometry-sweden-west-coast.polyline6"),
                 6,
             )
             .unwrap();

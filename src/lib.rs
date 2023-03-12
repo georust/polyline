@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn should_not_trigger_overflow() {
         decode_polyline(
-            include_str!("../route-geometry-sweden-west-coast.polyline6"),
+            include_str!("../resources/route-geometry-sweden-west-coast.polyline6"),
             6,
         )
         .unwrap();
