@@ -33,7 +33,7 @@ fn bench_decode(c: &mut Criterion) {
     let mut v: Vec<[f64; 2]> = vec![];
     (0..21501).for_each(|_| v.push([between_lon.sample(&mut rng), between_lat.sample(&mut rng)]));
     let res: LineString<f64> = v.into();
-    let encoded = encode_coordinates(res.clone(), 6).unwrap();
+    let encoded = encode_coordinates(res, 6).unwrap();
     c.bench_function("bench decode: 21502 coordinates", move |b| {
         b.iter(|| {
             decode_polyline(&encoded, 6);
