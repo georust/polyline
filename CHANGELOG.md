@@ -2,6 +2,7 @@
 
 ## 0.10.0
 
+* BREAKING: update to geo-types 0.7.8, drop support for geo-types 0.6
 * Update Coordinates to Coord due to geo-types change
 * Apply clippy suggestions
 * Update dependencies
