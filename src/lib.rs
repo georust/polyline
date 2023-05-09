@@ -201,7 +201,7 @@ mod tests {
         let res: LineString<f64> = vec![[9.9131118, 54.0702648], [9.9126013, 54.0702578]].into();
         assert_eq!(encode_coordinates(res, 5).unwrap(), poly);
         assert_eq!(
-            decode_polyline(&poly, 5).unwrap(),
+            decode_polyline(poly, 5).unwrap(),
             vec![[9.91311, 54.07026], [9.91260, 54.07026]].into()
         );
     }

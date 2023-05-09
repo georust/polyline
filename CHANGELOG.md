@@ -1,8 +1,15 @@
 # Changelog
 
+## 0.10.1
+
+* Fix dependencies to officially drop geo-types 0.6 - it was already
+  effectively dropped with the bump to 0.10.0 (it wouldn't compile), so this
+  isn't an additionally breaking change.
+
 ## 0.10.0
 
 * Update Coordinates to Coord due to geo-types change
+  * This is a BREAKING change for geo-types 0.6 users
 * Apply clippy suggestions
 * Update dependencies
 * Refactor decoding logic for perf improvement (https://github.com/georust/polyline/pull/28)
