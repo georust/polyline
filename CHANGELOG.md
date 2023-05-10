@@ -1,5 +1,7 @@
 # Changelog
 
+## Unreleased
+
 ## 0.10.1
 
 * Fix dependencies to officially drop geo-types 0.6 - it was already
