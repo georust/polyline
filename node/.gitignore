@@ -1,5 +1,0 @@
-native/target
-native/index.node
-**/*~
-**/node_modules
-**/.DS_Store
