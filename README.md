@@ -10,3 +10,6 @@ Google Encoded Polyline encoding & decoding in Rust.
 This crate uses `Coord` and `LineString` types from the `geo-types` crate, which encodes coordinates in `(x, y)` order. The Polyline algorithm and first-party documentation assumes the _opposite_ coordinate order. It is thus advisable to pay careful attention to the order of the coordinates you use for encoding and decoding.
 
 [Documentation](https://docs.rs/polyline/)
+
+## FFI
+C-compatible FFI bindings for this crate are provided by the [polyline-ffi](https://crates.io/crates/polyline-ffi) crate.
