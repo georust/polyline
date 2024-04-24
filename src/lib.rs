@@ -140,7 +140,7 @@ fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
     let mut byte;
     loop {
         byte = chars[index] as u64;
-        if byte < 63 {
+        if byte < 63 || (shift > 64 - 5) {
             return Err(format!("Cannot decode character at index {}", index));
         }
         byte -= 63;
@@ -173,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn it_works() {
+    fn precision5() {
         let test_cases = vec![
             TestCase {
                 input: vec![[2.0, 1.0], [4.0, 3.0]].into(),
@@ -191,6 +191,30 @@ mod tests {
             );
             assert_eq!(
                 decode_polyline(test_case.output, 5).unwrap(),
+                test_case.input
+            );
+        }
+    }
+
+    #[test]
+    fn precision6() {
+        let test_cases = vec![
+            TestCase {
+                input: vec![[2.0, 1.0], [4.0, 3.0]].into(),
+                output: "_c`|@_gayB_gayB_gayB",
+            },
+            TestCase {
+                input: vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 43.252]].into(),
+                output: "_izlhA~rlgdF_{geC~ywl@_kwzCn`{nI",
+            },
+        ];
+        for test_case in test_cases {
+            assert_eq!(
+                encode_coordinates(test_case.input.clone(), 6).unwrap(),
+                test_case.output
+            );
+            assert_eq!(
+                decode_polyline(test_case.output, 6).unwrap(),
                 test_case.input
             );
         }
