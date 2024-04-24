@@ -154,7 +154,7 @@ fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
     }
 
     if !valid {
-        return Err(format!("Couldn't decode character at index {}", index - 1))
+        return Err(format!("Couldn't decode character at index {}", index - 1));
     }
 
     let coordinate_change = if (result & 1) > 0 {
