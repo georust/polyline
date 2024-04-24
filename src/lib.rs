@@ -215,6 +215,7 @@ mod tests {
 
     #[test]
     // emoji is decodable but messes up data
+    // TODO: handle this case in the future?
     fn broken_string() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
         let res = vec![[-120.2, 38.5], [-120.95, 2306360.53104], [-126.453, 2306363.08304]].into();
@@ -232,10 +233,9 @@ mod tests {
     #[should_panic]
     // Can't have a latitude > 90.0
     fn bad_coords() {
-        let s = "_p~iF~ps|U_ulLnnqC_mqNvxq`@";
         let res: LineString<f64> =
             vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 430.252]].into();
-        assert_eq!(encode_coordinates(res, 5).unwrap(), s);
+        encode_coordinates(res, 5).unwrap();
     }
 
     #[test]
