@@ -118,11 +118,11 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
     let chars = polyline.as_bytes();
 
     while index < chars.len() {
-        let (latitude_change, new_index) = trans(chars, index);
+        let (latitude_change, new_index) = trans(chars, index).unwrap();
         if new_index >= chars.len() {
             break;
         }
-        let (longitude_change, new_index) = trans(chars, new_index);
+        let (longitude_change, new_index) = trans(chars, new_index).unwrap();
         index = new_index;
 
         lat += latitude_change;
@@ -134,20 +134,27 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
     Ok(coordinates.into())
 }
 
-fn trans(chars: &[u8], mut index: usize) -> (i64, usize) {
+fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
     let mut at_index;
     let mut shift = 0;
     let mut result = 0;
     let mut byte;
-    loop {
+    let max_shift = 64 - 5;
+    let mut valid = false;
+    while shift < max_shift {
         at_index = chars[index];
         byte = (at_index as u64).saturating_sub(63);
         index += 1;
         result |= (byte & 0x1f) << shift;
         shift += 5;
         if byte < 0x20 {
+            valid = true;
             break;
         }
+    }
+
+    if !valid {
+        return Err(format!("Couldn't decode character at index {}", index - 1))
     }
 
     let coordinate_change = if (result & 1) > 0 {
@@ -155,7 +162,7 @@ fn trans(chars: &[u8], mut index: usize) -> (i64, usize) {
     } else {
         result >> 1
     } as i64;
-    (coordinate_change, index)
+    Ok((coordinate_change, index))
 }
 
 #[cfg(test)]
@@ -213,6 +220,13 @@ mod tests {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
         let res = vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 43.252]].into();
         assert_eq!(decode_polyline(s, 5).unwrap(), res);
+    }
+
+    #[test]
+    #[should_panic]
+    fn invalid_string() {
+        let s = "invalid_polyline_that_should_be_handled_gracefully";
+        decode_polyline(s, 5).unwrap();
     }
 
     #[test]
