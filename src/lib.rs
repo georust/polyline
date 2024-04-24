@@ -140,21 +140,18 @@ fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
     let mut result = 0;
     let mut byte;
     let max_shift = 64 - 5;
-    let mut valid = false;
-    while shift < max_shift {
+    loop {
         at_index = chars[index];
         byte = (at_index as u64).saturating_sub(63);
         index += 1;
         result |= (byte & 0x1f) << shift;
         shift += 5;
+        if shift > max_shift {
+            return Err(format!("Couldn't decode character at index {}", index - 1));
+        }
         if byte < 0x20 {
-            valid = true;
             break;
         }
-    }
-
-    if !valid {
-        return Err(format!("Couldn't decode character at index {}", index - 1));
     }
 
     let coordinate_change = if (result & 1) > 0 {
