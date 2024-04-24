@@ -135,20 +135,18 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
 }
 
 fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
-    let mut at_index;
     let mut shift = 0;
     let mut result = 0;
     let mut byte;
-    let max_shift = 64 - 5;
     loop {
-        at_index = chars[index];
-        byte = (at_index as u64).saturating_sub(63);
-        index += 1;
-        result |= (byte & 0x1f) << shift;
-        shift += 5;
-        if shift > max_shift {
-            return Err(format!("Couldn't decode character at index {}", index - 1));
+        byte = chars[index] as u64;
+        if byte < 63 {
+            return Err(format!("Cannot decode character at index {}", index));
         }
+        byte -= 63;
+        result |= (byte & 0x1f) << shift;
+        index += 1;
+        shift += 5;
         if byte < 0x20 {
             break;
         }
