@@ -1,5 +1,14 @@
-on: push
-name: Run tests
+name: Run Polyline tests
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+      - trying
+  pull_request:
+  merge_group:
+
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
