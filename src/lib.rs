@@ -118,11 +118,11 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
     let chars = polyline.as_bytes();
 
     while index < chars.len() {
-        let (latitude_change, new_index) = trans(chars, index).unwrap();
+        let (latitude_change, new_index) = trans(chars, index)?;
         if new_index >= chars.len() {
             break;
         }
-        let (longitude_change, new_index) = trans(chars, new_index).unwrap();
+        let (longitude_change, new_index) = trans(chars, new_index)?;
         index = new_index;
 
         lat += latitude_change;
@@ -245,7 +245,7 @@ mod tests {
     #[should_panic]
     fn invalid_string() {
         let s = "invalid_polyline_that_should_be_handled_gracefully";
-        decode_polyline(s, 5).unwrap();
+        decode_polyline(s, 6).unwrap();
     }
 
     #[test]
