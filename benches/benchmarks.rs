@@ -5,11 +5,14 @@ use geo_types::LineString;
 use polyline::{decode_polyline, encode_coordinates};
 use rand::distributions::Distribution;
 use rand::distributions::Uniform;
-use rand::thread_rng;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 
 #[allow(unused_must_use)]
 fn bench_encode(c: &mut Criterion) {
-    let mut rng = thread_rng();
+    let seed = [6; 32];
+    let mut rng = StdRng::from_seed(seed);
+
     // These coordinates cover London, approximately
     let between_lon = Uniform::from(-6.379880..1.768960);
     let between_lat = Uniform::from(49.871159..55.811741);
@@ -26,7 +29,8 @@ fn bench_encode(c: &mut Criterion) {
 #[allow(unused_must_use)]
 fn bench_decode(c: &mut Criterion) {
     // comparable cpp (see e.g. Valhalla) decodes the same number of coords in around 500 µs
-    let mut rng = thread_rng();
+    let seed = [6; 32];
+    let mut rng = StdRng::from_seed(seed);
     // These coordinates cover London, approximately
     let between_lon = Uniform::from(-6.379880..1.768960);
     let between_lat = Uniform::from(49.871159..55.811741);
