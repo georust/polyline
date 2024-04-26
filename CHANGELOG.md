@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.10.2
+
 * fix decoder crashing with out-of-bounds error (https://github.com/georust/polyline/pull/37):
   * protect against invalid polylines
   * protect against potential overflow when shifting
