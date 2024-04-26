@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+* fix decoder crashing with out-of-bounds error (https://github.com/georust/polyline/pull/37):
+  * protect against invalid polylines
+  * protect against potential overflow when shifting
+  * performance hit: 10-12%
+
 ## 0.10.1
 
 * Fix dependencies to officially drop geo-types 0.6 - it was already
