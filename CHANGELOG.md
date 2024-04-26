@@ -2,8 +2,10 @@
 
 ## Unreleased
 
-* Decoder: protect against invalid polylines (https://github.com/georust/polyline/pull/37)
-* Decoder: protect against potential overflow (https://github.com/georust/polyline/pull/37)
+* fix decoder crashing with out-of-bounds error (https://github.com/georust/polyline/pull/37):
+  * protect against invalid polylines
+  * protect against potential overflow when shifting
+  * performance hit: 10-12%
 
 ## 0.10.1
 
