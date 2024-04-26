@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Decoder: protect against invalid polylines (https://github.com/georust/polyline/pull/37)
+* Decoder: protect against potential overflow (https://github.com/georust/polyline/pull/37)
+
 ## 0.10.1
 
 * Fix dependencies to officially drop geo-types 0.6 - it was already
