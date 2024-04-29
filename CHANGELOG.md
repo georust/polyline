@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+* inspired by HERE's [flexpolyline](https://github.com/heremaps/flexible-polyline):
+  * provide alt. implementation of both encode() and decode() based on LUT
+  * rework encoder delta-computation (performance improvement)
+* correctly differentiate character and overflow errors when decoding
+
 ## 0.10.2
 
 * fix decoder crashing with out-of-bounds error (https://github.com/georust/polyline/pull/37):
