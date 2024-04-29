@@ -242,7 +242,7 @@ fn _decode_lut(chars: &[u8], mut index: usize, max_shift: u8) -> Result<(i64, us
         if byte < 0 {
             return Err(format!("Cannot decode character at index {}", index));
         }
-        result |= (byte as u64 & 0x1f) << shift;
+        result |= (byte as u64 & 0b11111) << shift;
         shift += 5;
         index += 1;
         if byte < 0b100000 {
