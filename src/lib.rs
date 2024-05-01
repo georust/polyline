@@ -46,14 +46,13 @@ where
     }
 }
 
-fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
+fn encode(current: f64, previous: f64, factor: i32, output: &mut String) -> Result<(), String> {
     let current = scale(current, factor);
     let previous = scale(previous, factor);
     let mut coordinate = (current - previous) << 1;
     if (current - previous) < 0 {
         coordinate = !coordinate;
     }
-    let mut output: String = "".to_string();
     while coordinate >= 0x20 {
         let from_char = char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32)
             .ok_or("Couldn't convert character")?;
@@ -62,7 +61,7 @@ fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
     }
     let from_char = char::from_u32((coordinate + 63) as u32).ok_or("Couldn't convert character")?;
     output.push(from_char);
-    Ok(output)
+    Ok(())
 }
 
 /// Encodes a Google Encoded Polyline.
@@ -83,7 +82,7 @@ where
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
 
-    let mut output = "".to_string();
+    let mut output = String::new();
     let mut b = Coord { x: 0.0, y: 0.0 };
 
     for (i, a) in coordinates.into_iter().enumerate() {
@@ -91,8 +90,8 @@ where
             .map_err(|e| format!("Latitude error at position {0}: {1}", i, e))?;
         check(a.x, (MIN_LONGITUDE, MAX_LONGITUDE))
             .map_err(|e| format!("Longitude error at position {0}: {1}", i, e))?;
-        output = output + &encode(a.y, b.y, factor)?;
-        output = output + &encode(a.x, b.x, factor)?;
+        encode(a.y, b.y, factor, &mut output)?;
+        encode(a.x, b.x, factor, &mut output)?;
         b = a;
     }
     Ok(output)

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Speed up encode function (now runs in ~72% less time / 3.5x improvement):
+  * https://github.com/georust/polyline/pull/42
+
 ## 0.10.2
 
 * fix decoder crashing with out-of-bounds error (https://github.com/georust/polyline/pull/37):
