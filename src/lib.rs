@@ -46,23 +46,14 @@ where
     }
 }
 
-fn encode(current: f64, previous: f64, factor: i32) -> Result<String, String> {
-    let current = scale(current, factor);
-    let previous = scale(previous, factor);
-    let mut coordinate = (current - previous) << 1;
-    if (current - previous) < 0 {
-        coordinate = !coordinate;
+// Compute the maximum shift allowed/needed for representing longitude/latitude deltas,
+// based on precision
+fn max_shift(factor: i64, lat: bool) -> u8 {
+    if lat {
+        ((180 * factor).ilog2() + 1) as u8
+    } else {
+        ((360 * factor).ilog2() + 1) as u8
     }
-    let mut output: String = "".to_string();
-    while coordinate >= 0x20 {
-        let from_char = char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32)
-            .ok_or("Couldn't convert character")?;
-        output.push(from_char);
-        coordinate >>= 5;
-    }
-    let from_char = char::from_u32((coordinate + 63) as u32).ok_or("Couldn't convert character")?;
-    output.push(from_char);
-    Ok(output)
 }
 
 /// Encodes a Google Encoded Polyline.
@@ -82,20 +73,65 @@ where
 {
     let base: i32 = 10;
     let factor: i32 = base.pow(precision);
+    let mut encoded: String = "".to_string();
 
-    let mut output = "".to_string();
-    let mut b = Coord { x: 0.0, y: 0.0 };
+    let mut current: Coord<i64> = Coord { x: 0, y: 0 };
+    let mut previous: Coord<i64> = Coord { x: 0, y: 0 };
 
     for (i, a) in coordinates.into_iter().enumerate() {
+        current.x = scale(a.x, factor);
+        current.y = scale(a.y, factor);
         check(a.y, (MIN_LATITUDE, MAX_LATITUDE))
             .map_err(|e| format!("Latitude error at position {0}: {1}", i, e))?;
         check(a.x, (MIN_LONGITUDE, MAX_LONGITUDE))
             .map_err(|e| format!("Longitude error at position {0}: {1}", i, e))?;
-        output = output + &encode(a.y, b.y, factor)?;
-        output = output + &encode(a.x, b.x, factor)?;
-        b = a;
+        encoded = encoded + &encode(current.y - previous.y);
+        encoded = encoded + &encode(current.x - previous.x);
+        previous = current;
     }
-    Ok(output)
+    Ok(encoded)
+}
+
+// Polyline-encoder entrypoint, expects a scaled (and valid) longitude/latitude delta.
+fn encode(delta: i64) -> String {
+    let mut value = delta << 1;
+    if value < 0 {
+        value = !value;
+    }
+    // value can be encoded using lookup table (_encode() vs _encode_lut).
+    // At least on my machine, plain _encode() is slightly faster (-20%).
+    return _encode(value as u64);
+}
+
+fn _encode(mut value: u64) -> String {
+    let mut encoded: String = String::new();
+    while value >= 0x20 {
+        // apply 5bit mask to value and set 6th bit to indicate there is another chunk
+        // needed to encode "value"
+        let byte = ((value & 0b11111) | 0b100000) as u8;
+        encoded.push((byte + 63) as char);
+        value >>= 5;
+    }
+    // encode the remainder
+    encoded.push((value as u8 + 63) as char);
+    return encoded
+}
+
+// Approach for optimizing _encode(), utilizing a lookup table.
+fn _encode_lut(mut value: u64) -> String {
+    let mut encoded: String = String::new();
+    const ENCODING_TABLE: &str =
+        "?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
+    while value >= 0b100000 {
+        let pos = (value & 0b11111) | 0b100000;
+        let from_char = ENCODING_TABLE.as_bytes()[pos as usize] as char;
+        encoded.push(from_char);
+        value >>= 5;
+    }
+    let from_char = ENCODING_TABLE.as_bytes()[value as usize] as char;
+    encoded.push(from_char);
+    return encoded
 }
 
 /// Decodes a Google Encoded Polyline.
@@ -117,12 +153,15 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
 
     let chars = polyline.as_bytes();
 
+    // polyline can be decoded using lookup table (_decode() vs _decode_lut).
+    // At least on my machine, _decode_lut() is slightly faster (~20-25%).
     while index < chars.len() {
-        let (latitude_change, new_index) = trans(chars, index)?;
+        let (latitude_change, new_index) = _decode_lut(chars, index, max_shift(factor, true))?;
         if new_index >= chars.len() {
             break;
         }
-        let (longitude_change, new_index) = trans(chars, new_index)?;
+        let (longitude_change, new_index) =
+            _decode_lut(chars, new_index, max_shift(factor, false))?;
         index = new_index;
 
         lat += latitude_change;
@@ -134,21 +173,88 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
     Ok(coordinates.into())
 }
 
-fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
+fn _decode(chars: &[u8], mut index: usize, max_shift: u8) -> Result<(i64, usize), String> {
+    let mut shift = 0;
+    let mut value = 0;
+    let mut byte;
+
+    loop {
+        byte = chars[index] as u64;
+        if byte < 63 || byte > 127 {
+            return Err(format!("Cannot decode character at index {index}"));
+        }
+        byte -= 63;
+        // apply 5bit mask to byte and reconstruct value
+        value |= (byte & 0b11111) << shift;
+        shift += 5;
+        index += 1;
+        // if the 6th bit is not set, we are done
+        if byte < 0b100000 {
+            break;
+        } else if shift > max_shift {
+            // break-criterion didn't hit and next iteration would provoke
+            // an out-of-bounds longitude/latitude.
+            return Err(format!("Overflow due to character at index {}", index - 1));
+        }
+    }
+
+    let delta = if (value & 1) > 0 {
+        !(value >> 1)
+    } else {
+        value >> 1
+    } as i64;
+    Ok((delta, index))
+}
+
+fn _decode_lut(chars: &[u8], mut index: usize, max_shift: u8) -> Result<(i64, usize), String> {
+    #[rustfmt::skip]
+    const DECODING_TABLE: &[i8] = &[
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,
+         7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
+        17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+        27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+        37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+        47, 48, 49, 50, 51, 52, 53, 54, 55, 56,
+        57, 58, 59, 60, 61, 62, 63, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1,
+    ];
+
     let mut shift = 0;
     let mut result = 0;
     let mut byte;
     loop {
-        byte = chars[index] as u64;
-        if byte < 63 || (shift > 64 - 5) {
+        byte = DECODING_TABLE[chars[index] as usize];
+        if byte < 0 {
             return Err(format!("Cannot decode character at index {}", index));
         }
-        byte -= 63;
-        result |= (byte & 0x1f) << shift;
-        index += 1;
+        result |= (byte as u64 & 0b11111) << shift;
         shift += 5;
-        if byte < 0x20 {
+        index += 1;
+        if byte < 0b100000 {
             break;
+        } else if shift > max_shift {
+            // break-criterion didn't hit and next iteration would provoke
+            // an out-of-bounds longitude/latitude.
+            return Err(format!("Overflow due to character at index {}", index - 1));
         }
     }
 
@@ -233,19 +339,24 @@ mod tests {
     }
 
     #[test]
-    // emoji is decodable but messes up data
-    // TODO: handle this case in the future?
     fn broken_string() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
-        let res = vec![[-120.2, 38.5], [-120.95, 2306360.53104], [-126.453, 2306363.08304]].into();
-        assert_eq!(decode_polyline(s, 5).unwrap(), res);
+        let expected: Result<_, _> = Err("Cannot decode character at index 12".to_string());
+        assert_eq!(decode_polyline(s, 5), expected);
     }
 
     #[test]
-    #[should_panic]
     fn invalid_string() {
         let s = "invalid_polyline_that_should_be_handled_gracefully";
-        decode_polyline(s, 6).unwrap();
+        let expected: Result<_, _> = Err("Overflow due to character at index 5".to_string());
+        assert_eq!(decode_polyline(s, 5), expected);
+    }
+
+    #[test]
+    fn another_invalid_string() {
+        let s = "ugh_ugh";
+        let expected: Result<_, _> = Err("Overflow due to character at index 5".to_string());
+        assert_eq!(decode_polyline(s, 5), expected);
     }
 
     #[test]
