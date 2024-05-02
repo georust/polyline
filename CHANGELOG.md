@@ -4,7 +4,7 @@
 
 * inspired by HERE's [flexpolyline](https://github.com/heremaps/flexible-polyline):
   * provide alt. implementation of both encode() and decode() based on LUT
-  * rework encoder delta-computation (performance improvement)
+  * rework encoder delta-computation
 * correctly differentiate character and overflow errors when decoding
 
 ## 0.10.2

@@ -85,25 +85,26 @@ where
             .map_err(|e| format!("Latitude error at position {0}: {1}", i, e))?;
         check(a.x, (MIN_LONGITUDE, MAX_LONGITUDE))
             .map_err(|e| format!("Longitude error at position {0}: {1}", i, e))?;
-        encode(current.y - previous.y, &mut encoded);
-        encode(current.x - previous.x, &mut encoded);
+        encoded = encoded + &encode(current.y - previous.y);
+        encoded = encoded + &encode(current.x - previous.x);
         previous = current;
     }
     Ok(encoded)
 }
 
 // Polyline-encoder entrypoint, expects a scaled (and valid) longitude/latitude delta.
-fn encode(delta: i64, encoded: &mut String) {
+fn encode(delta: i64) -> String {
     let mut value = delta << 1;
     if value < 0 {
         value = !value;
     }
     // value can be encoded using lookup table (_encode() vs _encode_lut).
     // At least on my machine, plain _encode() is slightly faster (-20%).
-    _encode(value as u64, encoded);
+    return _encode(value as u64);
 }
 
-fn _encode(mut value: u64, encoded: &mut String) {
+fn _encode(mut value: u64) -> String {
+    let mut encoded: String = String::new();
     while value >= 0x20 {
         // apply 5bit mask to value and set 6th bit to indicate there is another chunk
         // needed to encode "value"
@@ -113,10 +114,12 @@ fn _encode(mut value: u64, encoded: &mut String) {
     }
     // encode the remainder
     encoded.push((value as u8 + 63) as char);
+    return encoded
 }
 
 // Approach for optimizing _encode(), utilizing a lookup table.
-fn _encode_lut(mut value: u64, encoded: &mut String) {
+fn _encode_lut(mut value: u64) -> String {
+    let mut encoded: String = String::new();
     const ENCODING_TABLE: &str =
         "?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
@@ -128,6 +131,7 @@ fn _encode_lut(mut value: u64, encoded: &mut String) {
     }
     let from_char = ENCODING_TABLE.as_bytes()[value as usize] as char;
     encoded.push(from_char);
+    return encoded
 }
 
 /// Decodes a Google Encoded Polyline.
