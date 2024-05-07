@@ -24,6 +24,7 @@
 
 use geo_types::{Coord, LineString};
 use std::char;
+use std::iter::{Enumerate, Peekable};
 
 const MIN_LONGITUDE: f64 = -180.0;
 const MAX_LONGITUDE: f64 = 180.0;
@@ -109,59 +110,51 @@ where
 /// let decoded_polyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
 /// ```
 pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>, String> {
-    let mut index = 0;
     let mut scaled_lat: i64 = 0;
     let mut scaled_lon: i64 = 0;
     let mut coordinates = vec![];
     let base: i32 = 10;
     let factor = i64::from(base.pow(precision));
 
-    let chars = polyline.as_bytes();
+    let mut chars = polyline.as_bytes().iter().copied().enumerate().peekable();
 
-    while index < chars.len() {
-        let (latitude_change, new_index) = trans(chars, index)?;
-        if new_index >= chars.len() {
-            break;
-        }
+    while let Some((lat_start, _)) = chars.peek().copied() {
+        let latitude_change = decode_next(&mut chars)?;
         scaled_lat += latitude_change;
         let lat = scaled_lat as f64 / factor as f64;
         if !(MIN_LATITUDE..MAX_LATITUDE).contains(&lat) {
-            return Err(format!(
-                "Invalid latitude: {lat} from character range {index}..{new_index}"
-            ));
+            return Err(format!("Invalid latitude: {lat} at index: {lat_start}"));
         }
 
-        let (longitude_change, new_new_index) = trans(chars, new_index)?;
+        let Some((lon_start, _)) = chars.peek().copied() else {
+            return Err(format!(
+                "No longitude to go with latitude at index: {lat_start}"
+            ));
+        };
+        let longitude_change = decode_next(&mut chars)?;
         scaled_lon += longitude_change;
         let lon = scaled_lon as f64 / factor as f64;
         if !(MIN_LONGITUDE..MAX_LONGITUDE).contains(&lon) {
-            return Err(format!(
-                "Invalid longitude: {lon} from character range {new_index}..{new_new_index}"
-            ));
+            return Err(format!("Invalid longitude: {lon} at index: {lon_start}"));
         }
 
-        index = new_new_index;
         coordinates.push([lon, lat]);
     }
 
     Ok(coordinates.into())
 }
 
-fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
+fn decode_next(
+    chars: &mut Peekable<Enumerate<impl std::iter::Iterator<Item = u8>>>,
+) -> Result<i64, String> {
     let mut shift = 0;
     let mut result = 0;
-    let mut byte;
-    loop {
-        if index >= chars.len() {
-            return Err(format!("Invalid polyline missing valid termination"));
-        }
-        byte = chars[index] as u64;
+    while let Some((idx, mut byte)) = chars.next() {
         if byte < 63 || (shift > 64 - 5) {
-            return Err(format!("Cannot decode character at index {index}"));
+            return Err(format!("Cannot decode character at index {idx}"));
         }
         byte -= 63;
-        result |= (byte & 0x1f) << shift;
-        index += 1;
+        result |= ((byte & 0x1f) as u64) << shift;
         shift += 5;
         if byte < 0x20 {
             break;
@@ -173,7 +166,7 @@ fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
     } else {
         result >> 1
     } as i64;
-    Ok((coordinate_change, index))
+    Ok(coordinate_change)
 }
 
 #[cfg(test)]
@@ -252,10 +245,7 @@ mod tests {
     fn broken_string() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
         let err = decode_polyline(s, 5).unwrap_err();
-        assert_eq!(
-            err,
-            "Invalid latitude: 2306360.53104 from character range 10..18"
-        );
+        assert_eq!(err, "Invalid latitude: 2306360.53104 at index: 10");
     }
 
     #[test]
@@ -269,7 +259,7 @@ mod tests {
     fn another_invalid_string() {
         let s = "ugh_ugh";
         let err = decode_polyline(s, 5).unwrap_err();
-        assert_eq!(err, "Invalid polyline missing valid termination");
+        assert_eq!(err, "Invalid latitude: 49775.95019 at index: 0");
     }
 
     #[test]
