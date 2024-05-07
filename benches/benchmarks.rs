@@ -1,13 +1,12 @@
 #[macro_use]
 extern crate criterion;
-use criterion::{Criterion, black_box};
+use criterion::{black_box, Criterion};
 use geo_types::LineString;
 use polyline::{decode_polyline, encode_coordinates};
 use rand::distributions::Distribution;
 use rand::distributions::Uniform;
-use rand::SeedableRng;
 use rand::rngs::StdRng;
-
+use rand::SeedableRng;
 
 #[allow(unused_must_use)]
 fn bench_encode(c: &mut Criterion) {
@@ -57,10 +56,5 @@ fn bench_decode(c: &mut Criterion) {
     });
 }
 
-
-criterion_group!(
-    benches,
-    bench_encode,
-    bench_decode,
-);
+criterion_group!(benches, bench_encode, bench_decode,);
 criterion_main!(benches);

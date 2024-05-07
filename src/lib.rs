@@ -236,7 +236,12 @@ mod tests {
     // TODO: handle this case in the future?
     fn broken_string() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
-        let res = vec![[-120.2, 38.5], [-120.95, 2306360.53104], [-126.453, 2306363.08304]].into();
+        let res = vec![
+            [-120.2, 38.5],
+            [-120.95, 2306360.53104],
+            [-126.453, 2306363.08304],
+        ]
+        .into();
         assert_eq!(decode_polyline(s, 5).unwrap(), res);
     }
 
