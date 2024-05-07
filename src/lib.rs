@@ -23,7 +23,7 @@
 //! It is thus advisable to pay careful attention to the order of the coordinates you use for encoding and decoding.
 
 use geo_types::{Coord, LineString};
-use std::{char, cmp};
+use std::char;
 
 const MIN_LONGITUDE: f64 = -180.0;
 const MAX_LONGITUDE: f64 = 180.0;
@@ -33,17 +33,6 @@ const MAX_LATITUDE: f64 = 90.0;
 fn scale(n: f64, factor: i32) -> i64 {
     let scaled = n * (f64::from(factor));
     scaled.round() as i64
-}
-
-// Bounds checking for input values
-fn check<T>(to_check: T, bounds: (T, T)) -> Result<T, T>
-where
-    T: cmp::PartialOrd + Copy,
-{
-    match to_check {
-        to_check if bounds.0 <= to_check && to_check <= bounds.1 => Ok(to_check),
-        _ => Err(to_check),
-    }
 }
 
 fn encode(delta: i64, output: &mut String) -> Result<(), String> {
@@ -84,10 +73,18 @@ where
     let mut previous = Coord { x: 0, y: 0 };
 
     for (i, next) in coordinates.into_iter().enumerate() {
-        check(next.y, (MIN_LATITUDE, MAX_LATITUDE))
-            .map_err(|e| format!("Latitude error at position {0}: {1}", i, e))?;
-        check(next.x, (MIN_LONGITUDE, MAX_LONGITUDE))
-            .map_err(|e| format!("Longitude error at position {0}: {1}", i, e))?;
+        if !(MIN_LATITUDE..MAX_LATITUDE).contains(&next.y) {
+            return Err(format!(
+                "Invalid latitude: {lat} at position {i}",
+                lat = next.y
+            ));
+        }
+        if !(MIN_LONGITUDE..MAX_LONGITUDE).contains(&next.x) {
+            return Err(format!(
+                "Invalid longitude: {lon} at position {i}",
+                lon = next.x
+            ));
+        }
 
         let scaled_next = Coord {
             x: scale(next.x, factor),
