@@ -46,20 +46,18 @@ where
     }
 }
 
-fn encode(current: f64, previous: f64, factor: i32, output: &mut String) -> Result<(), String> {
-    let current = scale(current, factor);
-    let previous = scale(previous, factor);
-    let mut coordinate = (current - previous) << 1;
-    if (current - previous) < 0 {
-        coordinate = !coordinate;
+fn encode(delta: i64, output: &mut String) -> Result<(), String> {
+    let mut value = delta << 1;
+    if value < 0 {
+        value = !value;
     }
-    while coordinate >= 0x20 {
-        let from_char = char::from_u32(((0x20 | (coordinate & 0x1f)) + 63) as u32)
+    while value >= 0x20 {
+        let from_char = char::from_u32(((0x20 | (value & 0x1f)) + 63) as u32)
             .ok_or("Couldn't convert character")?;
         output.push(from_char);
-        coordinate >>= 5;
+        value >>= 5;
     }
-    let from_char = char::from_u32((coordinate + 63) as u32).ok_or("Couldn't convert character")?;
+    let from_char = char::from_u32((value + 63) as u32).ok_or("Couldn't convert character")?;
     output.push(from_char);
     Ok(())
 }
@@ -83,16 +81,21 @@ where
     let factor: i32 = base.pow(precision);
 
     let mut output = String::new();
-    let mut b = Coord { x: 0.0, y: 0.0 };
+    let mut previous = Coord { x: 0, y: 0 };
 
-    for (i, a) in coordinates.into_iter().enumerate() {
-        check(a.y, (MIN_LATITUDE, MAX_LATITUDE))
+    for (i, next) in coordinates.into_iter().enumerate() {
+        check(next.y, (MIN_LATITUDE, MAX_LATITUDE))
             .map_err(|e| format!("Latitude error at position {0}: {1}", i, e))?;
-        check(a.x, (MIN_LONGITUDE, MAX_LONGITUDE))
+        check(next.x, (MIN_LONGITUDE, MAX_LONGITUDE))
             .map_err(|e| format!("Longitude error at position {0}: {1}", i, e))?;
-        encode(a.y, b.y, factor, &mut output)?;
-        encode(a.x, b.x, factor, &mut output)?;
-        b = a;
+
+        let scaled_next = Coord {
+            x: scale(next.x, factor),
+            y: scale(next.y, factor),
+        };
+        encode(scaled_next.y - previous.y, &mut output)?;
+        encode(scaled_next.x - previous.x, &mut output)?;
+        previous = scaled_next;
     }
     Ok(output)
 }
