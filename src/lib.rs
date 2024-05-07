@@ -99,17 +99,19 @@ where
 
 /// Decodes a Google Encoded Polyline.
 ///
+/// Returns an error if the polyline is invalid or if the decoded coordinates are out of bounds.
+///
 /// # Examples
 ///
 /// ```
 /// use polyline;
 ///
-/// let decodedPolyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
+/// let decoded_polyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
 /// ```
 pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>, String> {
     let mut index = 0;
-    let mut lat: i64 = 0;
-    let mut lng: i64 = 0;
+    let mut scaled_lat: i64 = 0;
+    let mut scaled_lon: i64 = 0;
     let mut coordinates = vec![];
     let base: i32 = 10;
     let factor = i64::from(base.pow(precision));
@@ -121,13 +123,25 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         if new_index >= chars.len() {
             break;
         }
-        let (longitude_change, new_index) = trans(chars, new_index)?;
-        index = new_index;
+        scaled_lat += latitude_change;
+        let lat = scaled_lat as f64 / factor as f64;
+        if !(MIN_LATITUDE..MAX_LATITUDE).contains(&lat) {
+            return Err(format!(
+                "Invalid latitude: {lat} from character range {index}..{new_index}"
+            ));
+        }
 
-        lat += latitude_change;
-        lng += longitude_change;
+        let (longitude_change, new_new_index) = trans(chars, new_index)?;
+        scaled_lon += longitude_change;
+        let lon = scaled_lon as f64 / factor as f64;
+        if !(MIN_LONGITUDE..MAX_LONGITUDE).contains(&lon) {
+            return Err(format!(
+                "Invalid longitude: {lon} from character range {new_index}..{new_new_index}"
+            ));
+        }
 
-        coordinates.push([lng as f64 / factor as f64, lat as f64 / factor as f64]);
+        index = new_new_index;
+        coordinates.push([lon, lat]);
     }
 
     Ok(coordinates.into())
@@ -138,9 +152,12 @@ fn trans(chars: &[u8], mut index: usize) -> Result<(i64, usize), String> {
     let mut result = 0;
     let mut byte;
     loop {
+        if index >= chars.len() {
+            return Err(format!("Invalid polyline missing valid termination"));
+        }
         byte = chars[index] as u64;
         if byte < 63 || (shift > 64 - 5) {
-            return Err(format!("Cannot decode character at index {}", index));
+            return Err(format!("Cannot decode character at index {index}"));
         }
         byte -= 63;
         result |= (byte & 0x1f) << shift;
@@ -232,33 +249,36 @@ mod tests {
     }
 
     #[test]
-    // emoji is decodable but messes up data
-    // TODO: handle this case in the future?
     fn broken_string() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
-        let res = vec![
-            [-120.2, 38.5],
-            [-120.95, 2306360.53104],
-            [-126.453, 2306363.08304],
-        ]
-        .into();
-        assert_eq!(decode_polyline(s, 5).unwrap(), res);
+        let err = decode_polyline(s, 5).unwrap_err();
+        assert_eq!(
+            err,
+            "Invalid latitude: 2306360.53104 from character range 10..18"
+        );
     }
 
     #[test]
-    #[should_panic]
     fn invalid_string() {
         let s = "invalid_polyline_that_should_be_handled_gracefully";
-        decode_polyline(s, 6).unwrap();
+        let err = decode_polyline(s, 5).unwrap_err();
+        assert_eq!(err, "Cannot decode character at index 12");
     }
 
     #[test]
-    #[should_panic]
-    // Can't have a latitude > 90.0
+    fn another_invalid_string() {
+        let s = "ugh_ugh";
+        let err = decode_polyline(s, 5).unwrap_err();
+        assert_eq!(err, "Invalid polyline missing valid termination");
+    }
+
+    #[test]
     fn bad_coords() {
+        // Can't have a latitude > 90.0
         let res: LineString<f64> =
             vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 430.252]].into();
-        encode_coordinates(res, 5).unwrap();
+        let err = encode_coordinates(res, 5).unwrap_err();
+        assert_eq!(err, "Invalid latitude: 430.252 at position 2");
     }
 
     #[test]
