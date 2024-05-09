@@ -74,13 +74,13 @@ where
     let mut previous = Coord { x: 0, y: 0 };
 
     for (i, next) in coordinates.into_iter().enumerate() {
-        if !(MIN_LATITUDE..MAX_LATITUDE).contains(&next.y) {
+        if !(MIN_LATITUDE..=MAX_LATITUDE).contains(&next.y) {
             return Err(format!(
                 "Invalid latitude: {lat} at position {i}",
                 lat = next.y
             ));
         }
-        if !(MIN_LONGITUDE..MAX_LONGITUDE).contains(&next.x) {
+        if !(MIN_LONGITUDE..=MAX_LONGITUDE).contains(&next.x) {
             return Err(format!(
                 "Invalid longitude: {lon} at position {i}",
                 lon = next.x
@@ -122,7 +122,7 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         let latitude_change = decode_next(&mut chars)?;
         scaled_lat += latitude_change;
         let lat = scaled_lat as f64 / factor as f64;
-        if !(MIN_LATITUDE..MAX_LATITUDE).contains(&lat) {
+        if !(MIN_LATITUDE..=MAX_LATITUDE).contains(&lat) {
             return Err(format!("Invalid latitude: {lat} at index: {lat_start}"));
         }
 
@@ -134,7 +134,7 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         let longitude_change = decode_next(&mut chars)?;
         scaled_lon += longitude_change;
         let lon = scaled_lon as f64 / factor as f64;
-        if !(MIN_LONGITUDE..MAX_LONGITUDE).contains(&lon) {
+        if !(MIN_LONGITUDE..=MAX_LONGITUDE).contains(&lon) {
             return Err(format!("Invalid longitude: {lon} at index: {lon_start}"));
         }
 
@@ -278,5 +278,31 @@ mod tests {
             6,
         )
         .unwrap();
+    }
+
+    #[test]
+    fn limits() {
+        let res: LineString<f64> = vec![[-180.0, -90.0], [180.0, 90.0], [0.0, 0.0]].into();
+        let polyline = "~fdtjD~niivI_oiivI__tsmT~fdtjD~niivI";
+        assert_eq!(
+            encode_coordinates(res.coords().copied(), 6).unwrap(),
+            polyline
+        );
+        assert_eq!(decode_polyline(polyline, 6).unwrap(), res);
+    }
+
+    #[test]
+    fn truncated() {
+        let input = LineString::from(vec![[2.0, 1.0], [4.0, 3.0]]);
+        let polyline = "_ibE_seK_seK_seK";
+        assert_eq!(
+            encode_coordinates(input.coords().copied(), 5).unwrap(),
+            polyline
+        );
+        assert_eq!(decode_polyline(polyline, 5).unwrap(), input);
+
+        let truncated_polyline = "_ibE_seK_seK";
+        let err = decode_polyline(truncated_polyline, 5).unwrap_err();
+        assert_eq!(err, "No longitude to go with latitude at index: 8");
     }
 }
