@@ -1,5 +1,3 @@
-use std::fmt::Write;
-
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum PolylineError {
@@ -12,22 +10,21 @@ pub enum PolylineError {
 
 impl std::error::Error for PolylineError {}
 impl std::fmt::Display for PolylineError {
-    fn fmt(&self, _f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let mut s = String::new();
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             PolylineError::LongitudeCoordError { coord, idx } => {
-                write!(&mut s, "Invalid longitude: {} at position {}", coord, idx)
+                write!(f, "Invalid longitude: {} at position {}", coord, idx)
             }
             PolylineError::LatitudeCoordError { coord, idx } => {
-                write!(&mut s, "Invalid latitude: {} at position {}", coord, idx)
+                write!(f, "Invalid latitude: {} at position {}", coord, idx)
             }
             PolylineError::DecodeError { idx } => {
-                write!(&mut s, "Cannot decode character at index {}", idx)
+                write!(f, "Cannot decode character at index {}", idx)
             }
             PolylineError::NoLongError { idx } => {
-                write!(&mut s, "No longitude to go with latitude at index: {}", idx)
+                write!(f, "No longitude to go with latitude at index: {}", idx)
             }
-            PolylineError::DecodeCharError => write!(&mut s, "Couldn't decode character"),
+            PolylineError::DecodeCharError => write!(f, "Couldn't decode character"),
         }
     }
 }
