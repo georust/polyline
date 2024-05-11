@@ -17,6 +17,9 @@ rand = "0.8.5"
 criterion = "0.5.1"
 flexpolyline = "0.1.0"
 
+[lib]
+bench = false
+
 [[bench]]
 name = "benchmarks"
 harness = false
