@@ -31,18 +31,18 @@ impl std::fmt::Display for PolylineError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             PolylineError::LongitudeCoordError { coord, idx } => {
-                write!(f, "Invalid longitude: {} at position {}", coord, idx)
+                write!(f, "invalid longitude: {} at position {}", coord, idx)
             }
             PolylineError::LatitudeCoordError { coord, idx } => {
-                write!(f, "Invalid latitude: {} at position {}", coord, idx)
+                write!(f, "invalid latitude: {} at position {}", coord, idx)
             }
             PolylineError::DecodeError { idx } => {
-                write!(f, "Cannot decode character at index {}", idx)
+                write!(f, "cannot decode character at index {}", idx)
             }
             PolylineError::NoLongError { idx } => {
-                write!(f, "No longitude to go with latitude at index: {}", idx)
+                write!(f, "no longitude to go with latitude at index: {}", idx)
             }
-            PolylineError::DecodeCharError => write!(f, "Couldn't decode character"),
+            PolylineError::DecodeCharError => write!(f, "couldn't decode character"),
         }
     }
 }
