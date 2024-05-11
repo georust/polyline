@@ -146,10 +146,10 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
             });
         }
 
-        coordinates.push([lon, lat]);
+        coordinates.push(Coord { x: lon, y: lat });
     }
 
-    Ok(coordinates.into())
+    Ok(LineString::new(coordinates))
 }
 
 fn decode_next(
