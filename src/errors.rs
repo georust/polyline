@@ -1,10 +1,28 @@
+//! Errors that can occur during encoding / decoding of Polylines
+
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum PolylineError {
-    LongitudeCoordError { coord: f64, idx: usize },
-    LatitudeCoordError { coord: f64, idx: usize },
-    NoLongError { idx: usize },
-    DecodeError { idx: usize },
+    LongitudeCoordError {
+        /// The coordinate value that caused the error due to being outside the range `-180.0..180.0`
+        coord: f64,
+        /// The string index of the coordinate error
+        idx: usize,
+    },
+    LatitudeCoordError {
+        /// The coordinate value that caused the error due to being outside the range `-90.0..90.0`
+        coord: f64,
+        /// The string index of the coordinate error
+        idx: usize,
+    },
+    NoLongError {
+        /// The string index of the missing longitude
+        idx: usize,
+    },
+    DecodeError {
+        /// The string index of the character that caused the decoding error
+        idx: usize,
+    },
     DecodeCharError,
 }
 
