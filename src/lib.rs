@@ -47,11 +47,11 @@ fn encode(delta: i64, output: &mut String) -> Result<(), PolylineError> {
     }
     while value >= 0x20 {
         let from_char = char::from_u32(((0x20 | (value & 0x1f)) + 63) as u32)
-            .ok_or(PolylineError::DecodeCharError)?;
+            .ok_or(PolylineError::EncodeToCharError)?;
         output.push(from_char);
         value >>= 5;
     }
-    let from_char = char::from_u32((value + 63) as u32).ok_or(PolylineError::DecodeCharError)?;
+    let from_char = char::from_u32((value + 63) as u32).ok_or(PolylineError::EncodeToCharError)?;
     output.push(from_char);
     Ok(())
 }
@@ -95,8 +95,18 @@ where
             x: scale(next.x, factor),
             y: scale(next.y, factor),
         };
-        encode(scaled_next.y - previous.y, &mut output)?;
-        encode(scaled_next.x - previous.x, &mut output)?;
+        encode(scaled_next.y - previous.y, &mut output).map_err(|_| {
+            PolylineError::CoordEncodingError {
+                coord: next,
+                idx: i,
+            }
+        })?;
+        encode(scaled_next.x - previous.x, &mut output).map_err(|_| {
+            PolylineError::CoordEncodingError {
+                coord: next,
+                idx: i,
+            }
+        })?;
         previous = scaled_next;
     }
     Ok(output)
