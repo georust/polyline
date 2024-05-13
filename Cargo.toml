@@ -2,12 +2,13 @@
 name = "polyline"
 description = "Encoder and decoder for the Google Encoded Polyline format"
 version = "0.10.2"
-authors = ["Tom MacWright <tom@macwright.org>", "The GeoRust Developers <mods@georust.org>"]
 repository = "https://github.com/georust/polyline"
+documentation = "https://docs.rs/polyline/"
 readme = "README.md"
-keywords = ["polyline", "geo"]
+keywords = ["polyline", "geo", "gis"]
 license = "MIT/Apache-2.0"
-edition = "2018"
+edition = "2021"
+categories = ["science::geo"]
 
 [dependencies]
 geo-types = "0.7.8"
