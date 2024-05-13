@@ -4,6 +4,11 @@
 
 * Speed up encode function (now runs in ~72% less time / 3.5x improvement):
   * https://github.com/georust/polyline/pull/42
+* Add structured errors and more speedups
+  * https://github.com/georust/polyline/pull/48
+  * https://github.com/georust/polyline/pull/50
+* Update to 2021 edition, README, metadata and dependency updates
+  * https://github.com/georust/polyline/pull/51
 
 ## 0.10.2
 
