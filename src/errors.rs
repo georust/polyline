@@ -1,5 +1,7 @@
 //! Errors that can occur during encoding / decoding of Polylines
 
+use geo_types::Coord;
+
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum PolylineError {
@@ -23,7 +25,12 @@ pub enum PolylineError {
         /// The string index of the character that caused the decoding error
         idx: usize,
     },
-    DecodeCharError,
+    EncodeToCharError,
+    CoordEncodingError {
+        coord: Coord<f64>,
+        /// The array index of the coordinate error
+        idx: usize,
+    },
 }
 
 impl std::error::Error for PolylineError {}
@@ -31,10 +38,10 @@ impl std::fmt::Display for PolylineError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             PolylineError::LongitudeCoordError { coord, idx } => {
-                write!(f, "invalid longitude: {} at position {}", coord, idx)
+                write!(f, "longitude out of bounds: {} at position {}", coord, idx)
             }
             PolylineError::LatitudeCoordError { coord, idx } => {
-                write!(f, "invalid latitude: {} at position {}", coord, idx)
+                write!(f, "latitude out of bounds: {} at position {}", coord, idx)
             }
             PolylineError::DecodeError { idx } => {
                 write!(f, "cannot decode character at index {}", idx)
@@ -42,7 +49,14 @@ impl std::fmt::Display for PolylineError {
             PolylineError::NoLongError { idx } => {
                 write!(f, "no longitude to go with latitude at index: {}", idx)
             }
-            PolylineError::DecodeCharError => write!(f, "couldn't decode character"),
+            PolylineError::EncodeToCharError => write!(f, "couldn't encode character"),
+            PolylineError::CoordEncodingError { coord, idx } => {
+                write!(
+                    f,
+                    "the coordinate {:?} at index: {} could not be encoded",
+                    coord, idx
+                )
+            }
         }
     }
 }
