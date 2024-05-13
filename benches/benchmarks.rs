@@ -21,6 +21,14 @@ fn build_coords() -> Vec<Coord> {
         .collect()
 }
 
+fn build_flexpolyline(coords: &[Coord], precision: flexpolyline::Precision) -> flexpolyline::Polyline {
+    let coords = coords.iter().map(|c| (c.x, c.y));
+    flexpolyline::Polyline::Data2d {
+        coordinates: coords.collect(),
+        precision2d: precision,
+    }
+}
+
 #[allow(unused_must_use)]
 fn bench_encode(c: &mut Criterion) {
     let coords = build_coords();
@@ -35,12 +43,21 @@ fn bench_encode(c: &mut Criterion) {
             black_box(encode_coordinates(coords.iter().copied(), 6).unwrap());
         })
     });
+
+    // This is just to compare us to another popular library. The format isn't identical so we
+    // don't expet performance to be identical, but it's some kind of touchstone.
+    // At time of commit, flexpolyline was ~20% slower at encoding than this crate.
+    c.bench_function("encode 10_000 coordinates at precision 1e-5 (flexpolyline)", |b| {
+        let pl = build_flexpolyline(&coords, flexpolyline::Precision::Digits5);
+        b.iter(|| {
+            black_box(pl.encode().unwrap());
+        })
+    });
 }
 
 #[allow(unused_must_use)]
 fn bench_decode(c: &mut Criterion) {
     let coords = build_coords();
-
     c.bench_function("decode 10_000 coordinates at precision 1e-5", |b| {
         let encoded = encode_coordinates(coords.iter().copied(), 5).unwrap();
         b.iter(|| {
@@ -52,6 +69,16 @@ fn bench_decode(c: &mut Criterion) {
         let encoded = encode_coordinates(coords.iter().copied(), 6).unwrap();
         b.iter(|| {
             black_box(decode_polyline(&encoded, 6).unwrap());
+        })
+    });
+
+    // This is just to compare us to another popular library. The format isn't identical so we
+    // don't expet performance to be identical, but it's some kind of touchstone.
+    // At time of commit, flexpolyline was ~12% slower at decoding than this crate.
+    c.bench_function("decode 10_000 coordinates at precision 1e-5 (flexpolyline)", |b| {
+        let encoded = build_flexpolyline(&coords, flexpolyline::Precision::Digits5).encode().unwrap();
+        b.iter(|| {
+            black_box(flexpolyline::Polyline::decode(&encoded).unwrap());
         })
     });
 }

@@ -16,6 +16,7 @@ geo-types = "0.7.8"
 [dev-dependencies]
 rand = "0.8.5"
 criterion = "0.5.1"
+flexpolyline = "0.1.0"
 
 [lib]
 bench = false
