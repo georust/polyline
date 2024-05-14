@@ -126,16 +126,17 @@ where
 pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>, PolylineError> {
     let mut scaled_lat: i64 = 0;
     let mut scaled_lon: i64 = 0;
-    let mut coordinates = vec![];
+    let mut coordinates = Vec::with_capacity(polyline.len());
     let base: i32 = 10;
     let factor = i64::from(base.pow(precision));
+    let factor_f64 = factor as f64;
 
     let mut chars = polyline.as_bytes().iter().copied().enumerate().peekable();
 
     while let Some((lat_start, _)) = chars.peek().copied() {
         let latitude_change = decode_next(&mut chars)?;
         scaled_lat += latitude_change;
-        let lat = scaled_lat as f64 / factor as f64;
+        let lat = scaled_lat as f64 / factor_f64;
         if !(MIN_LATITUDE..=MAX_LATITUDE).contains(&lat) {
             return Err(PolylineError::LatitudeCoordError {
                 coord: lat,
@@ -148,7 +149,7 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         };
         let longitude_change = decode_next(&mut chars)?;
         scaled_lon += longitude_change;
-        let lon = scaled_lon as f64 / factor as f64;
+        let lon = scaled_lon as f64 / factor_f64;
         if !(MIN_LONGITUDE..=MAX_LONGITUDE).contains(&lon) {
             return Err(PolylineError::LongitudeCoordError {
                 coord: lon,
