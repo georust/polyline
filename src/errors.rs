@@ -2,7 +2,7 @@
 
 use geo_types::Coord;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 #[non_exhaustive]
 pub enum PolylineError {
     LongitudeCoordError {
