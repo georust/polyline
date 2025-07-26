@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+* Derive `Clone` for `PolyLineError`
+  * https://github.com/georust/polyline/pull/54
+
 ## 0.11.0
 
 * Speed up encode function (now runs in ~72% less time / 3.5x improvement):
