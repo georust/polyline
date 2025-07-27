@@ -25,7 +25,7 @@
 pub mod errors;
 use errors::PolylineError;
 
-use geo_types::{Coord, LineString};
+use geo_types::{Coord, CoordFloat, LineString};
 use std::char;
 use std::iter::{Enumerate, Peekable};
 
@@ -34,13 +34,13 @@ const MAX_LONGITUDE: f64 = 180.0;
 const MIN_LATITUDE: f64 = -90.0;
 const MAX_LATITUDE: f64 = 90.0;
 
-fn scale(n: f64, factor: i32) -> i64 {
-    let scaled = n * (f64::from(factor));
-    scaled.round() as i64
+fn scale<T: CoordFloat>(n: T, factor: T) -> Result<i64, PolylineError<T>> {
+    let scaled = n * factor;
+    scaled.round().to_i64().ok_or(PolylineError::NumericCastFailure)
 }
 
 #[inline(always)]
-fn encode(delta: i64, output: &mut String) -> Result<(), PolylineError> {
+fn encode<T: CoordFloat>(delta: i64, output: &mut String) -> Result<(), PolylineError<T>> {
     let mut value = delta << 1;
     if value < 0 {
         value = !value;
@@ -67,24 +67,26 @@ fn encode(delta: i64, output: &mut String) -> Result<(), PolylineError> {
 /// let coords = line_string![(x: 2.0, y: 1.0), (x: 4.0, y: 3.0)];
 /// let encoded_vec = polyline::encode_coordinates(coords, 5).unwrap();
 /// ```
-pub fn encode_coordinates<C>(coordinates: C, precision: u32) -> Result<String, PolylineError>
+pub fn encode_coordinates<C, T: CoordFloat>(coordinates: C, precision: u32) -> Result<String, PolylineError<T>>
 where
-    C: IntoIterator<Item = Coord<f64>>,
+    C: IntoIterator<Item = Coord<T>>,
 {
     let base: i32 = 10;
-    let factor: i32 = base.pow(precision);
+    let Some(factor) = T::from(base.pow(precision)) else {
+        return Err(PolylineError::NumericCastFailure)
+    };
 
     let mut output = String::new();
     let mut previous = Coord { x: 0, y: 0 };
 
     for (i, next) in coordinates.into_iter().enumerate() {
-        if !(MIN_LATITUDE..=MAX_LATITUDE).contains(&next.y) {
+        if !(T::from(MIN_LATITUDE)..=T::from(MAX_LATITUDE)).contains(&next.y.into()) {
             return Err(PolylineError::LatitudeCoordError {
                 coord: next.y,
                 idx: i,
             });
         }
-        if !(MIN_LONGITUDE..=MAX_LONGITUDE).contains(&next.x) {
+        if !(T::from(MIN_LONGITUDE)..=T::from(MAX_LONGITUDE)).contains(&next.x.into()) {
             return Err(PolylineError::LongitudeCoordError {
                 coord: next.x,
                 idx: i,
@@ -92,16 +94,16 @@ where
         }
 
         let scaled_next = Coord {
-            x: scale(next.x, factor),
-            y: scale(next.y, factor),
+            x: scale(next.x, factor)?,
+            y: scale(next.y, factor)?,
         };
-        encode(scaled_next.y - previous.y, &mut output).map_err(|_| {
+        encode(scaled_next.y - previous.y, &mut output).map_err(|_: PolylineError<T>| {
             PolylineError::CoordEncodingError {
                 coord: next,
                 idx: i,
             }
         })?;
-        encode(scaled_next.x - previous.x, &mut output).map_err(|_| {
+        encode(scaled_next.x - previous.x, &mut output).map_err(|_: PolylineError<T>| {
             PolylineError::CoordEncodingError {
                 coord: next,
                 idx: i,
@@ -121,22 +123,24 @@ where
 /// ```
 /// use polyline;
 ///
-/// let decoded_polyline = polyline::decode_polyline(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
+/// let decoded_polyline = polyline::decode_polyline::<f64>(&"_p~iF~ps|U_ulLnnqC_mqNvxq`@", 5);
 /// ```
-pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>, PolylineError> {
+pub fn decode_polyline<T: CoordFloat>(polyline: &str, precision: u32) -> Result<LineString<T>, PolylineError<T>> {
     let mut scaled_lat: i64 = 0;
     let mut scaled_lon: i64 = 0;
     let mut coordinates = vec![];
     let base: i32 = 10;
-    let factor = i64::from(base.pow(precision));
+    let Some(factor) = T::from(base.pow(precision)) else {
+        return Err(PolylineError::NumericCastFailure)
+    };
 
     let mut chars = polyline.as_bytes().iter().copied().enumerate().peekable();
 
     while let Some((lat_start, _)) = chars.peek().copied() {
         let latitude_change = decode_next(&mut chars)?;
         scaled_lat += latitude_change;
-        let lat = scaled_lat as f64 / factor as f64;
-        if !(MIN_LATITUDE..=MAX_LATITUDE).contains(&lat) {
+        let lat = T::from(scaled_lat).ok_or(PolylineError::NumericCastFailure)? / factor;
+        if !(MIN_LATITUDE..=MAX_LATITUDE).contains(&lat.to_f64().ok_or(PolylineError::NumericCastFailure)?) {
             return Err(PolylineError::LatitudeCoordError {
                 coord: lat,
                 idx: lat_start,
@@ -148,8 +152,8 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
         };
         let longitude_change = decode_next(&mut chars)?;
         scaled_lon += longitude_change;
-        let lon = scaled_lon as f64 / factor as f64;
-        if !(MIN_LONGITUDE..=MAX_LONGITUDE).contains(&lon) {
+        let lon = T::from(scaled_lon).ok_or(PolylineError::NumericCastFailure)? / factor;
+        if !(MIN_LONGITUDE..=MAX_LONGITUDE).contains(&lon.to_f64().ok_or(PolylineError::NumericCastFailure)?) {
             return Err(PolylineError::LongitudeCoordError {
                 coord: lon,
                 idx: lon_start,
@@ -162,9 +166,9 @@ pub fn decode_polyline(polyline: &str, precision: u32) -> Result<LineString<f64>
     Ok(LineString::new(coordinates))
 }
 
-fn decode_next(
-    chars: &mut Peekable<Enumerate<impl std::iter::Iterator<Item = u8>>>,
-) -> Result<i64, PolylineError> {
+fn decode_next<T: CoordFloat>(
+    chars: &mut Peekable<Enumerate<impl Iterator<Item = u8>>>,
+) -> Result<i64, PolylineError<T>> {
     let mut shift = 0;
     let mut result = 0;
     for (idx, mut byte) in chars.by_ref() {
@@ -260,9 +264,9 @@ mod tests {
     }
 
     #[test]
-    fn broken_string() {
+    fn broken_string_f64() {
         let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
-        let err = decode_polyline(s, 5).unwrap_err();
+        let err = decode_polyline::<f64>(s, 5).unwrap_err();
         match err {
             crate::errors::PolylineError::LatitudeCoordError { coord, idx } => {
                 assert_eq!(coord, 2306360.53104);
@@ -273,9 +277,22 @@ mod tests {
     }
 
     #[test]
-    fn invalid_string() {
+    fn broken_string_f32() {
+        let s = "_p~iF~ps|U_u🗑lLnnqC_mqNvxq`@";
+        let err = decode_polyline::<f32>(s, 5).unwrap_err();
+        match err {
+            crate::errors::PolylineError::LatitudeCoordError { coord, idx } => {
+                assert_eq!(coord, 2306360.53104);
+                assert_eq!(idx, 10);
+            }
+            _ => panic!("Got wrong error"),
+        }
+    }
+
+    #[test]
+    fn invalid_string_f64() {
         let s = "invalid_polyline_that_should_be_handled_gracefully";
-        let err = decode_polyline(s, 5).unwrap_err();
+        let err = decode_polyline::<f64>(s, 5).unwrap_err();
         match err {
             crate::errors::PolylineError::DecodeError { idx } => assert_eq!(idx, 12),
             _ => panic!("Got wrong error"),
@@ -283,9 +300,19 @@ mod tests {
     }
 
     #[test]
-    fn another_invalid_string() {
+    fn invalid_string_f32() {
+        let s = "invalid_polyline_that_should_be_handled_gracefully";
+        let err = decode_polyline::<f32>(s, 5).unwrap_err();
+        match err {
+            crate::errors::PolylineError::DecodeError { idx } => assert_eq!(idx, 12),
+            _ => panic!("Got wrong error"),
+        }
+    }
+
+    #[test]
+    fn another_invalid_string_f64() {
         let s = "ugh_ugh";
-        let err = decode_polyline(s, 5).unwrap_err();
+        let err = decode_polyline::<f64>(s, 5).unwrap_err();
         match err {
             crate::errors::PolylineError::LatitudeCoordError { coord, idx } => {
                 assert_eq!(coord, 49775.95019);
@@ -296,7 +323,20 @@ mod tests {
     }
 
     #[test]
-    fn bad_coords() {
+    fn another_invalid_string_f32() {
+        let s = "ugh_ugh";
+        let err = decode_polyline::<f32>(s, 5).unwrap_err();
+        match err {
+            crate::errors::PolylineError::LatitudeCoordError { coord, idx } => {
+                assert_eq!(coord, 49775.95019);
+                assert_eq!(idx, 0);
+            }
+            _ => panic!("Got wrong error"),
+        }
+    }
+
+    #[test]
+    fn bad_coords_f64() {
         // Can't have a latitude > 90.0
         let res: LineString<f64> =
             vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 430.252]].into();
@@ -311,8 +351,23 @@ mod tests {
     }
 
     #[test]
-    fn should_not_trigger_overflow() {
-        decode_polyline(
+    fn bad_coords_f32() {
+        // Can't have a latitude > 90.0
+        let res: LineString<f32> =
+            vec![[-120.2, 38.5], [-120.95, 40.7], [-126.453, 430.252]].into();
+        let err = encode_coordinates(res, 5).unwrap_err();
+        match err {
+            crate::errors::PolylineError::LatitudeCoordError { coord, idx } => {
+                assert_eq!(coord, 430.252);
+                assert_eq!(idx, 2);
+            }
+            _ => panic!("Got wrong error"),
+        }
+    }
+
+    #[test]
+    fn should_not_trigger_overflow_f64() {
+        decode_polyline::<f64>(
             include_str!("../resources/route-geometry-sweden-west-coast.polyline6"),
             6,
         )
@@ -320,8 +375,28 @@ mod tests {
     }
 
     #[test]
-    fn limits() {
+    fn should_not_trigger_overflow_f32() {
+        decode_polyline::<f32>(
+            include_str!("../resources/route-geometry-sweden-west-coast.polyline6"),
+            6,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn limits_f64() {
         let res: LineString<f64> = vec![[-180.0, -90.0], [180.0, 90.0], [0.0, 0.0]].into();
+        let polyline = "~fdtjD~niivI_oiivI__tsmT~fdtjD~niivI";
+        assert_eq!(
+            encode_coordinates(res.coords().copied(), 6).unwrap(),
+            polyline
+        );
+        assert_eq!(decode_polyline(polyline, 6).unwrap(), res);
+    }
+
+    #[test]
+    fn limits_f32() {
+        let res: LineString<f32> = vec![[-180.0, -90.0], [180.0, 90.0], [0.0, 0.0]].into();
         let polyline = "~fdtjD~niivI_oiivI__tsmT~fdtjD~niivI";
         assert_eq!(
             encode_coordinates(res.coords().copied(), 6).unwrap(),
@@ -341,7 +416,27 @@ mod tests {
         assert_eq!(decode_polyline(polyline, 5).unwrap(), input);
 
         let truncated_polyline = "_ibE_seK_seK";
-        let err = decode_polyline(truncated_polyline, 5).unwrap_err();
+        let err = decode_polyline::<f64>(truncated_polyline, 5).unwrap_err();
+        match err {
+            crate::errors::PolylineError::NoLongError { idx } => {
+                assert_eq!(idx, 8);
+            }
+            _ => panic!("Got wrong error"),
+        }
+    }
+
+    #[test]
+    fn truncated_f32() {
+        let input = LineString::from(vec![[2.0f32, 1.0f32], [4.0f32, 3.0f32]]);
+        let polyline = "_ibE_seK_seK_seK";
+        assert_eq!(
+            encode_coordinates(input.coords().copied(), 5).unwrap(),
+            polyline
+        );
+        assert_eq!(decode_polyline(polyline, 5).unwrap(), input);
+
+        let truncated_polyline = "_ibE_seK_seK";
+        let err = decode_polyline::<f32>(truncated_polyline, 5).unwrap_err();
         match err {
             crate::errors::PolylineError::NoLongError { idx } => {
                 assert_eq!(idx, 8);
